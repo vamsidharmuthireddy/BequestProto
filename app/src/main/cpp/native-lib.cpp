@@ -186,17 +186,6 @@ JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadData(
     //=======================================
     //	Loading distinct objects in database
     //=======================================
-    ifstream ObjectPartsFile("/sdcard/Carz/ObjectParts.txt");
-    LOGI("ProgressCheck: Objects open status: %d", ObjectPartsFile.is_open());
-    while( ObjectPartsFile.good() && !ObjectPartsFile.eof() ){
-        ObjectPartsFile >> tempobj >> tempcount;
-        getline(ObjectPartsFile, temppart);
-        if( ObjectPartsFile.bad() || ObjectPartsFile.eof() || !ObjectPartsFile.good() ) break;
-        for( int i = 0 ; i < tempcount ; i++ ){
-            getline(ObjectPartsFile, temppart);
-            ObjectParts[tempobj].push_back( temppart );
-        }
-    }
 
 
     //=======================================
