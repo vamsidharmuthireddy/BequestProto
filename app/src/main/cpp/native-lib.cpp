@@ -10,11 +10,11 @@
 #include <map>
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
+
 #include "opencv2/highgui/highgui.hpp"
-#include "opencv2/features2d/features2d.hpp"
-//#include "opencv2/nonfree/features2d.hpp"
-#include "opencv2/ml/ml.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/ml/ml.hpp"
+#include <opencv2/flann/flann.hpp>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -184,24 +184,26 @@ JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadData(
     ObjectsFile.close();
 
     //=======================================
-    //	Loading distinct objects in database
-    //=======================================
-
-
-    //=======================================
     //	Loading Inverted Index File
     //=======================================
-    ifstream InvertedIndexFile("/sdcard/Carz/InvertedIndex.txt",ios::in);
+    ifstream InvertedIndexFile("invertedindexfile_5500.txt",ios::in);
+
+    map< int, map< int, int > > InvertedFile;
 
     LOGI("ProgressCheck: InvertedFile open status: %d", InvertedIndexFile.is_open());
+
     int vword, vcount, vimage, vnum;
     while(InvertedIndexFile.good()){
-        InvertedIndexFile >> vword >> vcount;
+        InvertedIndexFile >> vword >> vcount;		//loading inverted index
         for(int i = 0 ; i < vcount ; i++ ){
             InvertedIndexFile >> vimage >> vnum ;
             InvertedFile[vword][vimage] = vnum;
         }
-    }
+/*		if( InvertedFile[ vword ].size() > 500 ){
+			InvertedFile.erase( vword );
+			prune_count++;
+		}
+*/	}
     InvertedIndexFile.close();
     __android_log_write(ANDROID_LOG_VERBOSE,"Progress","InvertedIndexFile Loaded");
     LOGI("ProgressCheck: InvertedFile size= %d",(int)InvertedFile.size());
@@ -209,32 +211,30 @@ JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadData(
     //=======================================
     //	Loading the HKMeans Tree
     //=======================================
-    ifstream t_file("/sdcard/Carz/HKMeans_1000.Tree",ios::in);
+    ifstream t_file("HKMeans_10_4n.Tree",ios::in);	//loading the tree
     LOGI("ProgressCheck: Tree file open status: %d", t_file.is_open());
-    tree = ParseTree(t_file,0);
+    Tree* tree = ParseTree(t_file,0);				//parsing the tree
     t_file.close();
     __android_log_write(ANDROID_LOG_VERBOSE,"Progress","HKMeans tree Loaded");
 
     //======================================================
     //	Loading Image file names and Term Frequency Count
     //======================================================
-    string imageListFileName = "/sdcard/Carz/Annotations.txt";
-    string temp, tempLine;
+    string imageListFileName = "../GolkondaImages_5489.txt";
+    vector < string > ImageList;
+    string temp;
     ifstream imageListFile;
     imageListFile.open(imageListFileName.c_str(),ios::in);
-    string TF_filename = "/sdcard/Carz/DCount.txt";
+    string TF_filename = "descCount.txt";
+    vector < int > TF;
     int tempTF;
     ifstream TF_file;
     TF_file.open(TF_filename.c_str(), ios::in );
-
-    for(int i = 1 ; i <= N ; i++ ){
+    for(int i = 1 ; i <= 5500 ; i++ ){
         imageListFile >> temp;
-        getline( imageListFile, tempLine);
-        ImageList.push_back( temp );
-        Annotations.push_back( tempLine );
+        ImageList.push_back( temp );		//all the image names go into ImageList
         TF_file >> tempTF;
-        TF.push_back(tempTF);
-
+        TF.push_back(tempTF);				//all the descriptor counts go into TF
     }
     //=======================================
     //	Loading Image file names
@@ -268,16 +268,94 @@ JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadData(
 
 
 
-extern "C"
-jstring
-Java_com_example_home_BequestProto_MainActivity_stringFromJNI(
-        JNIEnv *env,
-        jobject /* this */) {
-    std::string hello = "Welcome to C++";
-    return env->NewStringUTF(hello.c_str());
+
+extern "C" {
+jstring Java_com_example_home_BequestProto_MainActivity_GetMatch(JNIEnv *env, jobject thiz,jint width, jint height, jbyteArray yuv, jintArray bgra) {
+
+
+    /* PRE pROCESSING */
+    QWords.clear();
+    QueryHist.clear();
+    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","Start...");
+/* PRE pROCESSING ends*/
+    //=======================================
+    //	Loading the frame
+    //=======================================
+    //		Mat* pMatGr=(Mat*)addrGray;
+    //	    Mat* pMatRgb=(Mat*)addrRgba;
+
+    //		Mat img_temp = *pMatGr;
+    //		Mat img_temp = imread("/data/data/com.example.heritagecam/files/TestImage.jpg",CV_LOAD_IMAGE_GRAYSCALE);
+
+
+
+    /* Take and Process Photo STARTS */
+
+
+    jbyte* _yuv  = env->GetByteArrayElements(yuv, 0);
+    jint*  _bgra = env->GetIntArrayElements(bgra, 0);
+
+    Mat myuv(height + height/2, width, CV_8UC1, (unsigned char *)_yuv);
+    Mat mbgra(height, width, CV_8UC4, (unsigned char *)_bgra);
+    Mat img_temp(height, width, CV_8UC1, (unsigned char *)_yuv);
+
+    cvtColor(myuv, mbgra, CV_YUV420sp2BGR, 4);
+
+
+/*	Mat img_temp = imread("/sdcard/TestImage.jpg",CV_LOAD_IMAGE_GRAYSCALE);
+
+	int height = img_temp.rows;
+	int width = img_temp.cols;
+*/
+
+    Mat img;
+    if( height > 400 || width > 400 ){
+        int new_h = 250;
+        int new_w = (new_h*width)/height;
+        img.create(new_h,new_w,CV_8UC3);
+        resize(img_temp,img,img.size(),0,0, INTER_LINEAR);
+    }else{
+        img = img_temp.clone();
+    }
+
+    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","Frame Loaded");
+
+
+
+    //SiftFeatureDetector detector;
+    std::vector<KeyPoint> keypoints;
+
+   // SiftDescriptorExtractor extractor;
+    Mat descriptors;
+
+    //detector.detect(img,keypoints);
+    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","SIFT detection");
+
+    //extractor.compute(img,keypoints,descriptors);
+    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","SIFT descriptor extraction");
+
+
+//    SiftFeatureDetector detector;
+//    std::vector<KeyPoint> keypoints;
+
+//    SiftDescriptorExtractor extractor;
+//    Mat descriptors;
+
+
+
+}
 }
 
 
+
+
+
+
+extern "C"
+jstring Java_com_example_home_BequestProto_MainActivity_stringFromJNI(JNIEnv *env, jobject /* this */) {
+    std::string hello = "Welcome to C++";
+    return env->NewStringUTF(hello.c_str());
+}
 
 extern "C"
 {
