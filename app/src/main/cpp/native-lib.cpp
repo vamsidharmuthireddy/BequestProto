@@ -8,8 +8,8 @@
 #include <cstdlib>
 #include <string>
 #include <map>
-//#include<features2d.hpp>
-#include <nonfree.hpp>
+//#include "features2d.hpp"
+//#include "nonfree.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -323,10 +323,10 @@ jstring Java_com_example_home_BequestProto_MainActivity_GetMatch(JNIEnv *env, jo
 
 
 
-    SiftFeatureDetector detector;
+//    SiftFeatureDetector detector;
     std::vector<KeyPoint> keypoints;
 
-    SiftDescriptorExtractor extractor;
+//    SiftDescriptorExtractor extractor;
     Mat descriptors;
 
     //detector.detect(img,keypoints);
