@@ -8,6 +8,13 @@ include_directories(C:/OpenCV-android-sdk/sdk/native/jni/include)
 add_library( lib_opencv SHARED IMPORTED )
 set_target_properties(lib_opencv PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libopencv_java.so)
 
+include_directories(C:/OpenCV-android-sdk/sdk/native/jni/include/opencv2/nonfree)
+add_library( lib_nonfree SHARED IMPORTED )
+set_target_properties(lib_nonfree
+ PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libnonfree_java.so)
+
+
+
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds it for you.
@@ -44,6 +51,8 @@ find_library( # Sets the name of the path variable.
 target_link_libraries( # Specifies the target library.
                        native-lib
                        lib_opencv
+                       lib_nonfree
+                       app-glue
                        # Links the target library to the log library
                        # included in the NDK.
                        ${log-lib} )

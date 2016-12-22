@@ -11,10 +11,16 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
-            cmake {
+
+            cmake{
                 cppFlags "-frtti -fexceptions"
-                abiFilters 'x86', 'armeabi', 'armeabi-v7a', 'mips'
+                abiFilters 'x86', 'armeabi-v7a', 'mips'
             }
+        }
+
+        ndk{
+
+            abiFilters 'x86','armeabi', 'armeabi-v7a', 'mips'
         }
     }
     sourceSets {
@@ -32,8 +38,11 @@ android {
         cmake {
             path "CMakeLists.txt"
         }
+
     }
 }
+
+
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
@@ -44,4 +53,5 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile project(':openCVLibrary2411')
     compile files('libs/commons-compress-1.12.jar')
+//    compile files('libs/*.so')
 }

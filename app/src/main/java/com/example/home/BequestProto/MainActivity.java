@@ -27,9 +27,30 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
+
         // Example of a call to a native method
         TextView tv = (TextView) findViewById(R.id.sample_text);
         tv.setText(stringFromJNI());
+
+        checkForDownload();
+
+        Button button = (Button) findViewById(R.id.openCamera);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Intent intent = new Intent(MainActivity.this, CameraActivity.class);
+                startActivity(intent);
+
+            }
+        });
+
+
+    }
+
+
+    public void checkForDownload(){
+
 
         launchPreferenceManager = new LaunchPreferenceManager(MainActivity.this);
         Button button = (Button) findViewById(R.id.openCamera);
@@ -70,6 +91,8 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e(LOGTAG, e.toString());
         }
+
+
 
 
     }

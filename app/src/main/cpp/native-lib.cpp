@@ -8,6 +8,9 @@
 #include <cstdlib>
 #include <string>
 #include <map>
+//#include<features2d.hpp>
+#include <nonfree.hpp>
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -271,7 +274,6 @@ JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadData(
 extern "C" {
 jstring Java_com_example_home_BequestProto_MainActivity_GetMatch(JNIEnv *env, jobject thiz,jint width, jint height, jbyteArray yuv, jintArray bgra) {
 
-
     /* PRE pROCESSING */
     QWords.clear();
     QueryHist.clear();
@@ -291,7 +293,7 @@ jstring Java_com_example_home_BequestProto_MainActivity_GetMatch(JNIEnv *env, jo
     /* Take and Process Photo STARTS */
 
 
-    jbyte* _yuv  = env->GetByteArrayElements(yuv, 0);
+ /*   jbyte* _yuv  = env->GetByteArrayElements(yuv, 0);
     jint*  _bgra = env->GetIntArrayElements(bgra, 0);
 
     Mat myuv(height + height/2, width, CV_8UC1, (unsigned char *)_yuv);
@@ -299,13 +301,13 @@ jstring Java_com_example_home_BequestProto_MainActivity_GetMatch(JNIEnv *env, jo
     Mat img_temp(height, width, CV_8UC1, (unsigned char *)_yuv);
 
     cvtColor(myuv, mbgra, CV_YUV420sp2BGR, 4);
-
-
-/*	Mat img_temp = imread("/sdcard/TestImage.jpg",CV_LOAD_IMAGE_GRAYSCALE);
-
-	int height = img_temp.rows;
-	int width = img_temp.cols;
 */
+
+	Mat img_temp = imread("/sdcard/TestImage.jpg",CV_LOAD_IMAGE_GRAYSCALE);
+
+	height = img_temp.rows;
+	width = img_temp.cols;
+
 
     Mat img;
     if( height > 400 || width > 400 ){
@@ -321,10 +323,10 @@ jstring Java_com_example_home_BequestProto_MainActivity_GetMatch(JNIEnv *env, jo
 
 
 
-    //SiftFeatureDetector detector;
+    SiftFeatureDetector detector;
     std::vector<KeyPoint> keypoints;
 
-   // SiftDescriptorExtractor extractor;
+    SiftDescriptorExtractor extractor;
     Mat descriptors;
 
     //detector.detect(img,keypoints);
@@ -332,13 +334,6 @@ jstring Java_com_example_home_BequestProto_MainActivity_GetMatch(JNIEnv *env, jo
 
     //extractor.compute(img,keypoints,descriptors);
     __android_log_write(ANDROID_LOG_VERBOSE,"Progress","SIFT descriptor extraction");
-
-
-//    SiftFeatureDetector detector;
-//    std::vector<KeyPoint> keypoints;
-
-//    SiftDescriptorExtractor extractor;
-//    Mat descriptors;
 
 
 
