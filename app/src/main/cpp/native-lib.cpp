@@ -8,9 +8,7 @@
 #include <cstdlib>
 #include <string>
 #include <map>
-//#include "features2d.hpp"
-//#include "nonfree.hpp"
-
+#include "opencv2/nonfree/nonfree.hpp"
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -340,14 +338,58 @@ jstring Java_com_example_home_BequestProto_MainActivity_GetMatch(JNIEnv *env, jo
 }
 }
 
+extern "C"
+void GetJStringContent(JNIEnv *AEnv, jstring AStr, std::string &ARes) {
+    if (!AStr) {
+        ARes.clear();
+        return;
+    }
+
+    const char *s = AEnv->GetStringUTFChars(AStr,NULL);
+    ARes=s;
+    AEnv->ReleaseStringUTFChars(AStr,s);
+}
+
+
+extern "C"{
+jstring JNICALL Java_com_example_home_BequestProto_JNiActivity_trial(JNIEnv *env, jobject instance, jlong inAddress, jlong outAddress){
+
+    Mat &in = *(Mat*) inAddress;
+    Mat &out = *(Mat*) outAddress;
 
 
 
+    if(in.channels() == 3){
+        cvtColor(in,out,CV_BGR2GRAY);
+    }else{
+        out = in.clone();
+    }
+
+    SiftFeatureDetector detector;
+    std::vector<KeyPoint> keypoints;
+
+    SiftDescriptorExtractor extractor;
+    Mat descriptors;
+
+    detector.detect(out,keypoints);
+    int size = keypoints.size();
+    stringstream ss;
+    ss << size;
+    String string1 = ss.str();
+
+    __android_log_write(ANDROID_LOG_VERBOSE,"PROGRESS","Detected keypoints");
+    extractor.compute(out,keypoints,descriptors);
+    __android_log_write(ANDROID_LOG_VERBOSE,"PROGRESS","Extracted decriptors ");
+
+    String send = "Keypoints size is "+string1;
+    return env->NewStringUTF(send.c_str());
+}
+}
 
 
 extern "C"
 jstring Java_com_example_home_BequestProto_MainActivity_stringFromJNI(JNIEnv *env, jobject /* this */) {
-    std::string hello = "Welcome to C++";
+    std::string hello = "Welcome to hell";
     return env->NewStringUTF(hello.c_str());
 }
 

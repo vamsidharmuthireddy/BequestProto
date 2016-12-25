@@ -12,16 +12,21 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
 
-            cmake{
+            cmake {
                 cppFlags "-frtti -fexceptions"
-                abiFilters 'x86', 'armeabi','armeabi-v7a', 'mips'
+                abiFilters 'x86', 'armeabi-v7a', 'mips'
             }
+        }
+
+        ndk {
+            abiFilters 'x86', "armeabi", "armeabi-v7a"
         }
 
     }
     sourceSets {
         main {
             jniLibs.srcDirs = ['src/main/jniLibs']
+            jni.srcDirs = ['src/main/jni', 'src/main/jni/']
         }
     }
     buildTypes {
