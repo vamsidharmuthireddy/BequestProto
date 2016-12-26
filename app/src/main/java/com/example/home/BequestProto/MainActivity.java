@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
 
     protected void onActivityResult(int requestcode, int resultcode,Intent data)//Called after the intent
     {
-        if(requestcode==Click && resultcode=RESULT_OK)
+        if(requestcode==Click && resultcode==RESULT_OK)
         {
             Bundle extras=data.getExtras();
             Bitmap img=(Bitmap) extras.get("data");//The result bitmap
