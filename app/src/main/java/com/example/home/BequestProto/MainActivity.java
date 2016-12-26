@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 2;
     private static final int PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 3;
     private static final int PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 4;
-
+    private static final int Click = 5;
     // Used to load the 'native-lib' library on application startup.
     static {
         try {
@@ -64,8 +64,15 @@ public class MainActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
     }
 
-
-
+    protected void onActivityResult(int requestcode, int resultcode,Intent data)//Called after the intent
+    {
+        if(requestcode==Click && resultcode=RESULT_OK)
+        {
+            Bundle extras=data.getExtras();
+            Bitmap img=(Bitmap) extras.get("data");//The result bitmap
+        }
+    }
+    
     public void checkForDownload(){
 
 
@@ -75,8 +82,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                Intent intent = new Intent(MainActivity.this, CameraActivity.class);
-                startActivity(intent);
+                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);//Making an intent
+                startActivityForResult(intent,Click);//Calling camera
 
             }
         });
