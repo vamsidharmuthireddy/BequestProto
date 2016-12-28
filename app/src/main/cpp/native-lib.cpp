@@ -28,6 +28,10 @@ using namespace cv;
 
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "native-activity", __VA_ARGS__))
 
+int level_nodes[] = {1, 11, 111, 1111, 11111, 111111};
+int ten_powers[] = {0, 10, 100, 1000, 10000};
+
+
 typedef struct Tree{
     int centers[10][128];
     struct Tree* sub[10];
@@ -44,12 +48,12 @@ typedef struct RImage{
     double m_score;
     vector< Point2f > corners;
 }RImage;
-
+/**
 typedef struct obj{
     string name;
     double score;
 }Object;
-
+**/
 Tree* ParseTree(ifstream &t_file, int d){
     if( !t_file.good() ){
         return NULL;
@@ -74,7 +78,7 @@ Tree* ParseTree(ifstream &t_file, int d){
     return t;
 }
 
-void GetPath(Tree* tree , int* center , int* path , int depth){
+void GetPath(Tree* tree , int* center , int* path , int depth, int *hist){
     if(tree == NULL){
         path[depth] = -1;
         return;
@@ -93,19 +97,13 @@ void GetPath(Tree* tree , int* center , int* path , int depth){
             minC = i;
         }
     }
-    path[depth] = minC+1;
-    GetPath(tree->sub[minC], center, path, depth+1);
-}
-
-int GetWord( int *path ){
-    int w = 0;
-    for( int i = 0 ; i < 3 ; i++ ){
-        //		cout << path[i] << " ";
-        w = (w*10) + path[i] - 1;
-    }
-    w += 1;
-    //	cout << w << endl;
-    return w;
+	path[depth] = minC;
+	int temp = 2*level_nodes[depth] + minC;
+	for(int i = 0 ; i < depth ; i++){
+		temp += (path[i]-1) * ten_powers[depth-i];
+	}
+	hist[depth+1] = temp;
+    GetPath(tree->sub[minC], center, path, depth+1,hist);
 }
 
 
@@ -116,32 +114,21 @@ int compare ( const void *p1 , const void *p2 ){
 }
 
 int compare2 ( const void *p1 , const void *p2 ){
-    double p1_c = (* (Object *)p1).score;
-    double p2_c = (* (Object *)p2).score;
-    return p1_c - p2_c < 0 ? 1 : -1;
+    double p1_c = (* (RImage *)p1).m_score;
+    double p2_c = (* (RImage *)p2).m_score;
+    return p1_c < p2_c ? 1 : -1;
 }
 
-
-int isInside ( int x , int y , int x1 , int y1  , int x3 , int y3 )
-{
-    if ( x >= x1 && x <= x3 ){
-        if ( y >= y1 && y <= y3 ){
-            return 1 ;
-        }
+extern "C"
+void GetJStringContent(JNIEnv *AEnv, jstring AStr, std::string &ARes) {
+    if (!AStr) {
+        ARes.clear();
+        return;
     }
-    return 0;
-}
 
-int findInt ( string c)
-{
-    int a = 0 ;
-    int i = 0 ;
-    while ( c[5+i] != '.' )
-    {
-        a = a*10 + (int)(c[5 + i] - '0') ;
-        i++;
-    }
-    return a ;
+    const char *s = AEnv->GetStringUTFChars(AStr,NULL);
+    ARes=s;
+    AEnv->ReleaseStringUTFChars(AStr,s);
 }
 
 
@@ -153,45 +140,39 @@ vector < string > Annotations;
 vector < int > TF;
 map< int, int > QueryHist;
 vector < int > QWords;
-int O;
-map< string, int > Objects;
-map<string, vector<string> > ObjectParts;
-
+std::vector<KeyPoint> keypoints;
+RImage *ImagesRetrieved;
 
 extern "C" {
-JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadData(JNIEnv* env, jobject thiz){
+JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadData(JNIEnv* env, jobject thiz, jstring fileLocation)
+{
 
     //=======================================
     //	Loading #images in database
     //=======================================
-    ifstream NumImagesFile("/sdcard/Carz/NumImages.txt");
+    string str;
+    GetJStringContent(env, fileLocation, str);
+/*
+    String numImage = str + "/BequestProto/NumImages.txt";
+
+    ifstream NumImagesFile(numImage.c_str());
     LOGI("ProgressCheck: NumImages open status: %d", NumImagesFile.is_open());
     NumImagesFile >> N;
     N_orig = N;
     NumImagesFile.close();
-
-    //=======================================
-    //	Loading distinct objects in database
-    //=======================================
-    ifstream ObjectsFile("/sdcard/Carz/Objects.txt");
-    string tempobj, temppart; int tempcount;
-    LOGI("ProgressCheck: Objects open status: %d", ObjectsFile.is_open());
-    ObjectsFile >> O;
-    for( int i = 0 ; i < O ; i++ ){
-        ObjectsFile >> tempcount >> tempobj;
-        Objects[tempobj] = tempcount;
-    }
-    ObjectsFile.close();
+*/
+    N = 5500;
+    N_orig = N;
 
     //=======================================
     //	Loading Inverted Index File
     //=======================================
-    ifstream InvertedIndexFile("invertedindexfile_5500.txt",ios::in);
-
-    map< int, map< int, int > > InvertedFile;
+    String Iindex = str + "/BequestProto/invertedindexfile_5500.txt";
+    ifstream InvertedIndexFile(Iindex.c_str(),ios::in);
 
     LOGI("ProgressCheck: InvertedFile open status: %d", InvertedIndexFile.is_open());
 
+    int prune_count = 0;
     int vword, vcount, vimage, vnum;
     while(InvertedIndexFile.good()){
         InvertedIndexFile >> vword >> vcount;		//loading inverted index
@@ -199,40 +180,46 @@ JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadData(
             InvertedIndexFile >> vimage >> vnum ;
             InvertedFile[vword][vimage] = vnum;
         }
-/*		if( InvertedFile[ vword ].size() > 500 ){
+		if( InvertedFile[ vword ].size() > 500 ){
 			InvertedFile.erase( vword );
 			prune_count++;
 		}
-*/	}
+	}
     InvertedIndexFile.close();
     __android_log_write(ANDROID_LOG_VERBOSE,"Progress","InvertedIndexFile Loaded");
     LOGI("ProgressCheck: InvertedFile size= %d",(int)InvertedFile.size());
+    LOGI("ProgressCheck: Prune count is %d",prune_count);
 
     //=======================================
     //	Loading the HKMeans Tree
     //=======================================
-    ifstream t_file("HKMeans_10_4n.Tree",ios::in);	//loading the tree
+    String Hktree = str +"/BequestProto/HKMeans_10_4n.Tree";
+    ifstream t_file(Hktree.c_str(),ios::in);	//loading the tree
     LOGI("ProgressCheck: Tree file open status: %d", t_file.is_open());
-    Tree* tree = ParseTree(t_file,0);				//parsing the tree
+    tree = ParseTree(t_file,0);				//parsing the tree
     t_file.close();
     __android_log_write(ANDROID_LOG_VERBOSE,"Progress","HKMeans tree Loaded");
 
     //======================================================
     //	Loading Image file names and Term Frequency Count
     //======================================================
-    string imageListFileName = "../GolkondaImages_5489.txt";
-    vector < string > ImageList;
+    string imageListFileName = str + "/BequestProto/GolkondaImages_5500.txt";
+
     string temp;
     ifstream imageListFile;
     imageListFile.open(imageListFileName.c_str(),ios::in);
-    string TF_filename = "descCount.txt";
-    vector < int > TF;
+    LOGI("ProgressCheck: Name list file open status: %d", imageListFile.is_open());
+    string TF_filename = str + "/BequestProto/descCount.txt";
+
     int tempTF;
     ifstream TF_file;
     TF_file.open(TF_filename.c_str(), ios::in );
-    for(int i = 1 ; i <= 5500 ; i++ ){
+    LOGI("ProgressCheck: Desc Count file open status: %d", TF_file.is_open());
+
+    for(int i = 1 ; i <= N ; i++ ){
         imageListFile >> temp;
         ImageList.push_back( temp );		//all the image names go into ImageList
+//        LOGI("ProgressCheck: Checking ImageList[i]: %s", ImageList[i-1].c_str() );
         TF_file >> tempTF;
         TF.push_back(tempTF);				//all the descriptor counts go into TF
     }
@@ -260,132 +247,422 @@ JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadData(
 
      */
 
-
-
-
 }
 }
-
-
 
 
 extern "C" {
-jstring Java_com_example_home_BequestProto_MainActivity_GetMatch(JNIEnv *env, jobject thiz,jint width, jint height, jbyteArray yuv, jintArray bgra) {
+JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadMyData(JNIEnv* env, jobject thiz, jstring fileLocation)
+{
 
-    /* PRE pROCESSING */
+    //=======================================
+    //	Loading #images in database
+    //=======================================
+    string str;
+    GetJStringContent(env, fileLocation, str);
+
+    N = 978;
+    N_orig = N;
+
+    //=======================================
+    //	Loading Inverted Index File
+    //=======================================
+    String Iindex = str + "/BequestProto2/InvertedIndex_10000_10.txt";
+    ifstream InvertedIndexFile(Iindex.c_str(),ios::in);
+
+    LOGI("ProgressCheck: InvertedFile open status: %d", InvertedIndexFile.is_open());
+
+    int prune_count = 0;
+    int vword, vcount, vimage, vnum;
+    while(InvertedIndexFile.good()){
+        InvertedIndexFile >> vword >> vcount;		//loading inverted index
+        for(int i = 0 ; i < vcount ; i++ ){
+            InvertedIndexFile >> vimage >> vnum ;
+            InvertedFile[vword][vimage] = vnum;
+        }
+//        LOGI("ProgressCheck: InvertedFile[%d].size()= %d",vword,InvertedFile[vword].size());
+        if( InvertedFile[ vword ].size() > 500 ){
+            InvertedFile.erase( vword );
+            prune_count++;
+        }
+    }
+    InvertedIndexFile.close();
+    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","InvertedIndexFile Loaded");
+    LOGI("ProgressCheck: InvertedFile size= %d",(int)InvertedFile.size());
+    LOGI("ProgressCheck: Prune count is %d",prune_count);
+
+    //=======================================
+    //	Loading the HKMeans Tree
+    //=======================================
+    String Hktree = str +"/BequestProto2/HKMeans_10000_10.Tree";
+    ifstream t_file(Hktree.c_str(),ios::in);	//loading the tree
+    LOGI("ProgressCheck: Tree file open status: %d", t_file.is_open());
+    tree = ParseTree(t_file,0);				//parsing the tree
+    t_file.close();
+    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","HKMeans tree Loaded");
+
+    //======================================================
+    //	Loading Image file names and Term Frequency Count
+    //======================================================
+    string imageListFileName = str + "/BequestProto2/image_names.txt";
+
+    string temp;
+    ifstream imageListFile;
+    imageListFile.open(imageListFileName.c_str(),ios::in);
+    LOGI("ProgressCheck: Name list file open status: %d", imageListFile.is_open());
+    string TF_filename = str + "/BequestProto2/descCount.txt";
+
+    int tempTF;
+    ifstream TF_file;
+    TF_file.open(TF_filename.c_str(), ios::in );
+    LOGI("ProgressCheck: Desc Count file open status: %d", TF_file.is_open());
+
+    for(int i = 1 ; i <= N ; i++ ){
+        imageListFile >> temp;
+        ImageList.push_back( temp );		//all the image names go into ImageList
+//        LOGI("ProgressCheck: Checking ImageList[i]: %s", ImageList[i-1].c_str() );
+        TF_file >> tempTF;
+        TF.push_back(tempTF);				//all the descriptor counts go into TF
+    }
+    //=======================================
+    //	Loading Image file names
+    //=======================================
+    /*         ifstream an1_file("/sdcard/Golkonda_5500/AnnInfo.txt",ios::in);
+         ifstream an2_file("/sdcard/Golkonda_5500/AnnText.txt",ios::in);
+         ifstream an3_file("/sdcard/Golkonda_5500/AnnBoundary.txt",ios::in);
+         int TotalAnn;
+         an1_file>>TotalAnn;
+         string TempImageId;
+         for( int i = 0 ; i < TotalAnn ; i++ ){
+                Annotation TempAnn;
+                an1_file >> TempImageId >> TempAnn.type ;
+                getline( an2_file , TempAnn.text );
+                if( TempAnn.type.compare("OBJECT") == 0 ){
+                       an3_file >> TempAnn.boundary;
+                }
+                ImageAnns[ TempImageId ].push_back(TempAnn);
+         }
+         an1_file.close();
+         an2_file.close();
+         an3_file.close();
+
+     */
+
+}
+}
+
+
+extern "C" {
+void Java_com_example_home_BequestProto_JNiActivity_GetMatch(JNIEnv *env, jobject thiz, jlong inAddress,
+                                                             jstring fileLocation) {
+
+    /* PRE PROCESSING */
     QWords.clear();
     QueryHist.clear();
     __android_log_write(ANDROID_LOG_VERBOSE,"Progress","Start...");
-/* PRE pROCESSING ends*/
-    //=======================================
-    //	Loading the frame
-    //=======================================
-    //		Mat* pMatGr=(Mat*)addrGray;
-    //	    Mat* pMatRgb=(Mat*)addrRgba;
 
-    //		Mat img_temp = *pMatGr;
-    //		Mat img_temp = imread("/data/data/com.example.heritagecam/files/TestImage.jpg",CV_LOAD_IMAGE_GRAYSCALE);
+    string str;
+    GetJStringContent(env,fileLocation,str);
+
+    //str = str.append("/temp.jpg").c_str();
+    str = str+"/temp1.jpg";
+
+    Mat img_temp = imread(str);
+
+//    Mat &img_temp = *(Mat*) inAddress;
+
+    if(img_temp.channels() == 3){
+        cvtColor(img_temp,img_temp,CV_BGR2GRAY);
+    }else{
+        img_temp = img_temp.clone();
+    }
 
 
-
-    /* Take and Process Photo STARTS */
-
-
- /*   jbyte* _yuv  = env->GetByteArrayElements(yuv, 0);
-    jint*  _bgra = env->GetIntArrayElements(bgra, 0);
-
-    Mat myuv(height + height/2, width, CV_8UC1, (unsigned char *)_yuv);
-    Mat mbgra(height, width, CV_8UC4, (unsigned char *)_bgra);
-    Mat img_temp(height, width, CV_8UC1, (unsigned char *)_yuv);
-
-    cvtColor(myuv, mbgra, CV_YUV420sp2BGR, 4);
-*/
-
-	Mat img_temp = imread("/sdcard/TestImage.jpg",CV_LOAD_IMAGE_GRAYSCALE);
-
-	height = img_temp.rows;
-	width = img_temp.cols;
+	int height = img_temp.rows;
+	int width = img_temp.cols;
 
 
     Mat img;
-    if( height > 400 || width > 400 ){
-        int new_h = 250;
-        int new_w = (new_h*width)/height;
-        img.create(new_h,new_w,CV_8UC3);
-        resize(img_temp,img,img.size(),0,0, INTER_LINEAR);
+    if( height > 640 || width > 640 ){
+
+        if(width >= height){
+            int new_w = 640;
+            int new_h = ((double)new_w*height)/width;
+            Size size(new_w, new_h);
+            resize(img_temp,img,size,0,0, INTER_LINEAR);
+        }else{
+            int new_h = 640;
+            int new_w = ((double)new_h*width)/height;
+            Size size(new_w, new_h);
+            resize(img_temp,img,size,0,0, INTER_LINEAR);
+
+        }
+
     }else{
         img = img_temp.clone();
     }
 
     __android_log_write(ANDROID_LOG_VERBOSE,"Progress","Frame Loaded");
 
-
-
-//    SiftFeatureDetector detector;
-    std::vector<KeyPoint> keypoints;
-
-//    SiftDescriptorExtractor extractor;
-    Mat descriptors;
-
-    //detector.detect(img,keypoints);
-    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","SIFT detection");
-
-    //extractor.compute(img,keypoints,descriptors);
-    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","SIFT descriptor extraction");
-
-
-
-}
-}
-
-extern "C"
-void GetJStringContent(JNIEnv *AEnv, jstring AStr, std::string &ARes) {
-    if (!AStr) {
-        ARes.clear();
-        return;
-    }
-
-    const char *s = AEnv->GetStringUTFChars(AStr,NULL);
-    ARes=s;
-    AEnv->ReleaseStringUTFChars(AStr,s);
-}
-
-
-extern "C"{
-jstring JNICALL Java_com_example_home_BequestProto_JNiActivity_trial(JNIEnv *env, jobject instance, jlong inAddress, jlong outAddress){
-
-    Mat &in = *(Mat*) inAddress;
-    Mat &out = *(Mat*) outAddress;
-
-
-
-    if(in.channels() == 3){
-        cvtColor(in,out,CV_BGR2GRAY);
-    }else{
-        out = in.clone();
-    }
+    LOGI("ProgressCheck: Image Height = %d, Image Width = %d", img.rows,img.cols);
 
     SiftFeatureDetector detector;
-    std::vector<KeyPoint> keypoints;
+//    std::vector<KeyPoint> keypoints;
 
     SiftDescriptorExtractor extractor;
     Mat descriptors;
 
-    detector.detect(out,keypoints);
-    int size = keypoints.size();
-    stringstream ss;
-    ss << size;
-    String string1 = ss.str();
+    detector.detect(img,keypoints);
+    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","SIFT detection");
 
-    __android_log_write(ANDROID_LOG_VERBOSE,"PROGRESS","Detected keypoints");
-    extractor.compute(out,keypoints,descriptors);
-    __android_log_write(ANDROID_LOG_VERBOSE,"PROGRESS","Extracted decriptors ");
+    extractor.compute(img,keypoints,descriptors);
+    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","SIFT descriptor extraction");
 
-    String send = "Keypoints size is "+string1;
-    return env->NewStringUTF(send.c_str());
+    int des[128];
+	for(int i = 0 ; i < descriptors.rows ; i++ ){
+        for(int j = 0 ; j < 128 ; j++){
+            des[j] = descriptors.at<float>(i,j);
+        }
+        int path[12];
+        int hist[12];
+		hist[0] = 1;
+		int depth = 0;
+		GetPath(tree, des, path, depth, hist);
+		for(int j = 0 ; j < 6 ; j++){
+			if(path[j] == -1){
+				depth = j;
+				break;
+			}
+		}
+
+		int finalWord = hist[depth];
+		int n =depth;
+		while(n){						//Uncomment only when Inverted index is made for leaf-1(node-1112) to leaf-10000(node-11111)
+			finalWord = finalWord - pow(10,depth-n);	//Current inverted index is from node-1 to node-11111
+			n--;
+		}
+
+//		depth = 4;
+		if(QueryHist.count( finalWord ) > 0){
+			QueryHist[ finalWord ] += 1;
+		}
+		else{
+			QueryHist[ finalWord ] = 1;
+//			cout << " ! " <<  hist[j] << endl;
+		}
+		QWords.push_back( finalWord );
+    }
+    LOGI("ProgressCheck: Total Query Words = %d", QWords.size() );
+/* QUANTIZE ends */
+
+    /* search starts*/
+
+
+    double idf;
+//    RImage *ImagesRetrieved = new RImage[N+5];
+    ImagesRetrieved = new RImage[N+5];
+    for(int i = 1 ; i <= N ; i++ ) {
+        ImagesRetrieved[ i ].index  = i;
+        ImagesRetrieved[ i ].r_score  = 0;
+        ImagesRetrieved[ i ].m_score  = 0;
+    }
+    LOGI("ProgressCheck: Total images in the database (N) = %d", N );
+    int word, count;
+    for( map< int, int >::iterator it = QueryHist.begin() ; it != QueryHist.end() ; ++it){
+        word = (*it).first;
+        count = (*it).second;
+        if( InvertedFile[ word ].size() == 0 ){
+//            LOGI("InvertedFile[ %d ].size() = %d", word,InvertedFile[ word ].size() );
+            continue;
+        }
+
+        idf = log10( N/InvertedFile[word].size() );
+//        LOGI("ProgressCheck: Word = %d and idf = %f", word,idf );
+        for( map< int , int >::iterator it2 = InvertedFile[word].begin() ; it2 != InvertedFile[word].end() ; ++it2 ){
+//            LOGI("ProgressCheck: Entered for loop");
+            int terms = TF[ (*it2).first-1 ] > QWords.size() ? TF[ (*it2).first-1 ] : QWords.size() ;
+//            LOGI("ProgressCheck: terms = %f", terms );
+            ImagesRetrieved[(*it2).first].r_score += ( ( ( count > (*it2).second ? (*it2).second : count ) * 1.0 )/(double)terms)  * idf;
+            //			ImagesRetrieved[(*it2).first].r_score += count * idf;
+//            LOGI("ProgressCheck: Image = %d, r_score = %f", ImagesRetrieved[(*it2).first].index,ImagesRetrieved[(*it2).first].r_score );
+        }
+    }
+
+    qsort( ImagesRetrieved + 1, N , sizeof(ImagesRetrieved[ 1 ]), compare );
+
+    for (int i=1;i<=N;i++){
+        LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %f", ImagesRetrieved[ i ].index,ImagesRetrieved[ i ].r_score );
+    }
+/*
+    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 1 ].index,ImagesRetrieved[ 1 ].r_score );
+    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 2 ].index,ImagesRetrieved[ 2 ].r_score );
+    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 3 ].index,ImagesRetrieved[ 3 ].r_score );
+    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 4 ].index,ImagesRetrieved[ 4 ].r_score );
+    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 5 ].index,ImagesRetrieved[ 5 ].r_score);
+    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 6 ].index,ImagesRetrieved[ 6 ].r_score );
+    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 7 ].index,ImagesRetrieved[ 7 ].r_score );
+    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 8 ].index,ImagesRetrieved[ 8 ].r_score );
+    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 9 ].index,ImagesRetrieved[ 9 ].r_score );
+    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 10 ].index,ImagesRetrieved[ 10 ].r_score );
+*/    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","Inverted index search is done");
+
+
+    /* search ends*/
+    /*Sorted Image list is stored in  ImagesRetrieved based on their r_score*/
+
+
 }
 }
 
+extern "C"{
+jstring JNICALL Java_com_example_home_BequestProto_JNiActivity_GeoVerify(JNIEnv *env, jobject instance,
+                                                                         jstring fileLocation){
+    /*Goemetrical verification*/
+
+    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","Reached GeoVerify");
+
+    string str;
+    GetJStringContent(env,fileLocation,str);
+
+    Mat RImg;
+    std::vector<KeyPoint> Rkeypoints;
+    Mat Rdescriptors;
+    vector< int > RWords;
+    string RImgName;
+    vector < Mat > RMatches ;
+    string WordKeyDir = str + "/BequestProto2/Words_n_Keys_10000_10/WordKey_";
+
+    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","Going to process 10 images");
+    for(int n = 1 ;  n <= 10 ; n++){
+//		RImgName = directoryPath + "1_img" + ImagesRetrieved[i].index + ".jpg";
+        char RImgNumber[ 20 ];
+        sprintf( RImgNumber, "%d", ImagesRetrieved[ n ].index );
+        string RImgFileName(RImgNumber);
+        string RImgFilePath = WordKeyDir + RImgFileName + ".txt";
+        ifstream RImgFile( RImgFilePath.c_str(),ios::in );			//loading the text file with words and their corresponding keypoint locations of top 5 retrieved images
+        cout<<RImgFilePath<<endl;
+        int countWords, Rword;
+        Point2f RPoint;
+        RImgFile >> countWords;	//number of words
+        for(int i = 0 ; i < countWords ; i++ ){
+            RImgFile >> Rword >> RPoint.x >> RPoint.y;
+            RWords.push_back( Rword );						//loading the words of the retrieved images
+            KeyPoint temp(RPoint,0);
+            Rkeypoints.push_back(temp);						//loading the keypoint locations of the retrieved images
+        }
+
+
+        std::vector< DMatch > imatches;
+
+        for(int i = 0 ; i < RWords.size() ; i++ ){		//for each retreived image word check if it matches with any of the query image word
+            for(int j = 0 ; j < QWords.size() ; j++ ){
+                if( RWords[i] == QWords[j] ){
+                    //			if(matches[i] == minc[j] && fabs(distMatchQ[i] - distMatchR[i]) < 10000){
+                    DMatch tempDMatch;
+                    tempDMatch.queryIdx = i;			//index of retrieved image word
+                    tempDMatch.trainIdx = j;			//index of query word
+                    tempDMatch.distance = 0;
+                    imatches.push_back(tempDMatch);		//storing all the matches
+                }
+            }
+        }
+        ///////////////////////////
+        ///////////////////////////
+
+        std::vector<Point2f> obj;
+        std::vector<Point2f> scene;
+
+        for( int i = 0; i < imatches.size(); i++ )
+        {
+            //-- Get the keypoints from the good matches
+            obj.push_back( Rkeypoints[ imatches[i].queryIdx ].pt );		//all the matching retrieved image words
+            scene.push_back( keypoints[ imatches[i].trainIdx ].pt ); 	//all the matching query words
+        }
+
+        std::vector<uchar> inliers(obj.size(),0);
+        if(obj.size() == 0 ) continue;
+        Mat F = findFundamentalMat( obj, scene, inliers , CV_FM_RANSAC, 1, 0 );
+
+        std::vector<cv::Point2f>::const_iterator itPts=obj.begin();	//iterator for retrieved image words
+        std::vector<uchar>::const_iterator itIn= inliers.begin();	//iterator for inliers(outlier = 0, inlier = 1)
+        std::vector<Point2f> obj_ransac;
+        std::vector<Point2f> scene_ransac;
+
+
+
+        int it = 0, total = 0;
+        while (itPts!=obj.end()) {		//for all the retrieved words
+            if (*itIn){			//if current word is an inlier then push corresponding keypoint locations
+                obj_ransac.push_back( Rkeypoints[ imatches[ total ].queryIdx ].pt );	//keypoint location corresponding to inlier word from retrieved image
+                scene_ransac.push_back( keypoints[ imatches[ total ].trainIdx ].pt );//keypoint location corresponding to inlier word from query image
+                ++it;
+            }
+            ++itPts;
+            ++itIn;
+            total++;
+        }
+
+        ImagesRetrieved[ n ].m_score = 1.0 * it ;		//score of image based on inliers size
+
+        if(it < 3 ) continue;	//if inliers are less than three then don't bother about object corners
+
+/*
+		std::vector<Point2f> obj_corners(4);
+		if(argc > 2 && argc == 6){
+			obj_corners[0] = cvPoint( atof(argv[2]),atof(argv[3]) ); obj_corners[1] = cvPoint(  atof(argv[4]),atof(argv[3]) );
+			obj_corners[2] = cvPoint(  atof(argv[4]),atof(argv[5]) ); obj_corners[3] = cvPoint(  atof(argv[2]),atof(argv[5]) );
+		}else{
+			obj_corners[0] = cvPoint(0,0); obj_corners[1] = cvPoint( RImg.cols, 0 );
+			obj_corners[2] = cvPoint( RImg.cols, RImg.rows ); obj_corners[3] = cvPoint( 0, RImg.rows );
+		}
+		(ImagesRetrieved[ n ].corners).reserve(4);		//reserve some memory for corner locations
+
+		Mat H = findHomography( obj_ransac, scene_ransac, CV_RANSAC );		//find homography matrix based on two keypoint sets related to  final sets of words
+		perspectiveTransform( obj_corners, ImagesRetrieved[ n ].corners, H );	//getting perspective transform based on Homography matrix
+
+*/
+
+        Rkeypoints.erase(Rkeypoints.begin(), Rkeypoints.end());	//erase everything to make way for next retrieved image
+        RWords.erase(RWords.begin(), RWords.end());
+        Rdescriptors.release();
+
+    }
+
+    qsort( ImagesRetrieved + 1, 10 , sizeof(ImagesRetrieved[ 1 ]), compare2 );	//sort retrieved images based on their m_score
+    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","Processed and sorted 10 images");
+    /*Goemetrical verification done*/
+
+
+    keypoints.erase(keypoints.begin(),keypoints.end());
+
+
+    LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 1 ].index  - 1 ].c_str(),ImagesRetrieved[ 1 ].m_score);
+    LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 2 ].index  - 1 ].c_str(),ImagesRetrieved[ 2 ].m_score);
+    LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 3 ].index  - 1 ].c_str(),ImagesRetrieved[ 3 ].m_score);
+    LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 4 ].index  - 1 ].c_str(),ImagesRetrieved[ 4 ].m_score);
+    LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 5 ].index  - 1 ].c_str(),ImagesRetrieved[ 5 ].m_score);
+    LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 6 ].index  - 1 ].c_str(),ImagesRetrieved[ 6 ].m_score);
+    LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 7 ].index  - 1 ].c_str(),ImagesRetrieved[ 7 ].m_score);
+    LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 8 ].index  - 1 ].c_str(),ImagesRetrieved[ 8 ].m_score);
+    LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 9 ].index  - 1 ].c_str(),ImagesRetrieved[ 9 ].m_score);
+    LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 10 ].index  - 1].c_str(),ImagesRetrieved[ 10 ].m_score);
+
+
+    string Top = ImageList[ ImagesRetrieved[ 1 ].index - 1 ];	//Top retrieved image
+
+//    stringstream ss;
+//    ss << ImagesRetrieved[1].index;
+//    String imgNum = ss.str();
+
+//    string Top = "1_img" + imgNum + ".jpg";
+    __android_log_write(ANDROID_LOG_VERBOSE,"Top Retrieved Image is ",Top.c_str());
+
+
+    return env->NewStringUTF(Top.c_str());
+
+
+}
+}
 
 extern "C"
 jstring Java_com_example_home_BequestProto_MainActivity_stringFromJNI(JNIEnv *env, jobject /* this */) {

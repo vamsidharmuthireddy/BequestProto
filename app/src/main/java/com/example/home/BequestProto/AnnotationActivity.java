@@ -7,6 +7,7 @@ import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.io.File;
 
@@ -16,6 +17,7 @@ import java.io.File;
 
 public class AnnotationActivity extends AppCompatActivity {
 
+    private static final String LOGTAG = "AnnotationActivity";
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
@@ -23,7 +25,8 @@ public class AnnotationActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_annotation);
 
-        File imageFile = new File(Environment.getExternalStorageDirectory(),"golden_eagle.jpg");
+
+        File imageFile = new File(Environment.getExternalStorageDirectory(),"temp1.jpg");
         if(imageFile.exists()) {
             Log.v("Annotation", "Image file exists");
             BitmapFactory.Options options = new BitmapFactory.Options();
@@ -32,13 +35,26 @@ public class AnnotationActivity extends AppCompatActivity {
             ImageView imageView = (ImageView) findViewById(R.id.sample_image);
 
             if (imageView != null) {
-                Log.v("Annotation", "imageview is not empty");
+                Log.v(LOGTAG, "imageview is not empty");
                 imageView.setImageBitmap(outputImageBitmap);
             } else {
-                Log.v("Annotation", "imageview is  empty");
+                Log.v(LOGTAG, "imageview is  empty");
             }
         }else
-            Log.v("Annotation", "imagefile doesn't exists");
+            Log.v(LOGTAG, "imagefile doesn't exists");
+
+        String result = getIntent().getStringExtra("result");
+        TextView textView = (TextView) findViewById(R.id.annotation_text);
+        textView.setText(result);
+
+
 
     }
+
+
+ public void loadWordFile(){
+
+    }
+
+
 }

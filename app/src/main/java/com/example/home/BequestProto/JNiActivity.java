@@ -15,14 +15,13 @@ import org.opencv.core.Mat;
 
 import java.io.File;
 
-import static com.example.home.BequestProto.PackageDownloader.LOGTAG;
-
 /**
  * Created by HOME on 24-12-2016.
  */
 
 public class JNiActivity extends AsyncTask<Void,Void,String> {
 
+    private static final String LOGTAG = "JNiActivity";
     public Context context;
     public Activity activity;
     private String num;
@@ -40,7 +39,7 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
     @Override
     protected String doInBackground(Void... params) {
 
-        String path = "test.jpg";
+        String path = "temp1.jpg";
 
         Mat input = new Mat();
         Mat output = new Mat();
@@ -56,12 +55,15 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
                 Log.e(LOGTAG,"Path loaded bitmap is null");
             }
 
-
             Utils.bitmapToMat(outputImageBitmap,input);
             long inad = input.getNativeObjAddr();
             long outad = output.getNativeObjAddr();
 
-            num = trial(inad,outad);
+
+            String fileAddress = Environment.getExternalStorageDirectory().getAbsolutePath();
+            GetMatch(inad,fileAddress);
+            Log.v(LOGTAG,"Done implementing GetMatch, going to call GeoVerify");
+            num = GeoVerify(fileAddress);
 
             return num;
         }
@@ -76,13 +78,15 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
 
         Intent intent = new Intent(context, AnnotationActivity.class);
         intent.putExtra("result",str);
-//        intent.putExtra("image",outputImageBitmap);
         context.startActivity(intent);
 
     }
 
 
-    public native String trial(long in, long out);
+//    public native String trial(long in, long out, String file);
+
+    public native void GetMatch(long in, String file);
+    public native String GeoVerify(String fileAddress);
 
 }
 
