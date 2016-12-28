@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
@@ -42,6 +43,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
+//        LoadData(Environment.getExternalStorageDirectory().getAbsolutePath());
+
+        LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
 
 //        checkForDownload();
 
@@ -166,5 +171,8 @@ public class MainActivity extends AppCompatActivity {
      */
     public native String stringFromJNI();
 
+    public native void LoadData(String filelocation);
+
+    public native void LoadMyData(String filelocation);
 
 }
