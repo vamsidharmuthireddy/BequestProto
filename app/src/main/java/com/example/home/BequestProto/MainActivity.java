@@ -4,8 +4,9 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.os.Environment;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
@@ -14,23 +15,23 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-
+import static com.example.home.BequestProto.PackageDownloader.LOGTAG;
 
 public class MainActivity extends AppCompatActivity {
 
     LaunchPreferenceManager launchPreferenceManager;
-    private static final String LOGTAG = "MainActivity";
+
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final int PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 2;
     private static final int PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 3;
     private static final int PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 4;
-
+    private static final int Click = 5;
     // Used to load the 'native-lib' library on application startup.
     static {
         try {
             System.loadLibrary("native-lib");
             System.loadLibrary("opencv_java");
-            System.loadLibrary("nonfree");
+        System.loadLibrary("nonfree");
         } catch (UnsatisfiedLinkError e) {
             System.err.println("unable to load the opencv  library" + e.toString());
         }
@@ -41,18 +42,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
-//        LoadData(Environment.getExternalStorageDirectory().getAbsolutePath());
 
-        Log.v(LOGTAG,"Done Loading relevant files");
 //        checkForDownload();
 
-        Button button = (Button) findViewById(R.id.openCamera);
+      Button button = (Button) findViewById(R.id.openCamera);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                Log.v(LOGTAG,"Click Registered. Starting the process");
                 JNiActivity jNiActivity = new JNiActivity(MainActivity.this, MainActivity.this);
                 jNiActivity.execute();
 
@@ -64,13 +61,20 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-
+        Log.v("AFTER_JNI","Done storing the image");
 
         ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
     }
 
-
-
+    protected void onActivityResult(int requestcode, int resultcode,Intent data)//Called after the intent
+    {
+        if(requestcode==Click && resultcode==RESULT_OK)
+        {
+            Bundle extras=data.getExtras();
+            Bitmap img=(Bitmap) extras.get("data");//The result bitmap
+        }
+    }
+    
     public void checkForDownload(){
 
 
@@ -80,8 +84,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                Intent intent = new Intent(MainActivity.this, CameraActivity.class);
-                startActivity(intent);
+                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);//Making an intent
+                startActivityForResult(intent,Click);//Calling camera
 
             }
         });
@@ -162,8 +166,5 @@ public class MainActivity extends AppCompatActivity {
      */
     public native String stringFromJNI();
 
-    public native void LoadData(String fileLocation);
-
-    public native void LoadMyData(String fileLocation);
 
 }
