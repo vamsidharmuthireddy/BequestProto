@@ -1,6 +1,7 @@
 package com.example.home.BequestProto;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -15,8 +16,6 @@ import org.opencv.core.Mat;
 
 import java.io.File;
 
-import static android.R.attr.label;
-
 /**
  * Created by HOME on 24-12-2016.
  */
@@ -29,6 +28,8 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
     private String num;
     private Bitmap outputImageBitmap;
 
+    private ProgressDialog progressDialog;
+
 
     public JNiActivity(Context _context, Activity _activity) {
 
@@ -37,6 +38,20 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
 
     }
 
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+
+        progressDialog = new ProgressDialog(context);
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        progressDialog.setIndeterminate(false);
+        progressDialog.setProgress(0);
+        progressDialog.setMessage("Getting Information");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        //Log.v(LOGTAG, "Progress is " + progressDialog.getProgress());
+    }
 
     @Override
     protected String doInBackground(Void... params) {
@@ -75,6 +90,7 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
 
     @Override
     protected void onPostExecute(String str) {
+        progressDialog.dismiss();
         TextView textView = (TextView)activity.findViewById(R.id.sample_text);
         String[] parts = num.split("_");
         int resId = context.getResources().getIdentifier(parts[0], "string", context.getPackageName());

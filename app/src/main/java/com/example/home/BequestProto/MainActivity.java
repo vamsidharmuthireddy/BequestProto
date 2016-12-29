@@ -1,25 +1,23 @@
 package com.example.home.BequestProto;
 
 import android.Manifest;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AlertDialog;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import java.io.File;
-
-import static com.example.home.BequestProto.PackageDownloader.LOGTAG;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -46,12 +44,21 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+//        ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
 
 //        LoadData(Environment.getExternalStorageDirectory().getAbsolutePath());
 
-        LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
+        if (checkPermission()) {
+            LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
 
-      checkForDownload();
+        } else {
+            requestPermission();
+        }
+
+
+//        LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
+
+//      checkForDownload();
 
       Button button = (Button) findViewById(R.id.openCamera);
         button.setOnClickListener(new View.OnClickListener() {
@@ -63,17 +70,35 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, imageUri);
                 startActivityForResult(intent,Click);//Calling camera
 
-                //Intent intent = new Intent(MainActivity.this, CameraActivity.class);
-                //startActivity(intent);
-
             }
 
         });
 
+//        ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
 
         Log.v("AFTER_JNI","Done storing the image");
 
-        ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+    }
+
+
+    protected boolean checkPermission() {
+        int result = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE);
+        if (result == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    protected void requestPermission() {
+
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            Toast.makeText(this, "Write External Storage permission allows us to do store images. Please allow this permission in App Settings.", Toast.LENGTH_LONG).show();
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 3);
+            }
+        }
     }
 
     protected void onActivityResult(int requestcode, int resultcode,Intent data)//Called after the intent
@@ -82,9 +107,6 @@ public class MainActivity extends AppCompatActivity {
         {
             JNiActivity jNiActivity = new JNiActivity(MainActivity.this, MainActivity.this);
             jNiActivity.execute();
-            //Intent i1 = new Intent(this, AnnotationActivity.class);
-            //startActivity(i1);
-            //finish();
 
         }
     }
@@ -159,6 +181,11 @@ public class MainActivity extends AppCompatActivity {
 
         switch (requestCode) {
             case PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
+                } else {
+                    Log.e("value", "Permission Denied, You cannot use local drive .");
+                }
             case PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
