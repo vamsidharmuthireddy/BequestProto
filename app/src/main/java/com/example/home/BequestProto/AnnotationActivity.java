@@ -2,6 +2,7 @@ package com.example.home.BequestProto;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
@@ -37,16 +38,21 @@ public class AnnotationActivity extends AppCompatActivity {
             if (imageView != null) {
                 Log.v(LOGTAG, "imageview is not empty");
                 imageView.setImageBitmap(outputImageBitmap);
+                String result = getIntent().getStringExtra("result");
+                Log.v(LOGTAG,"result = "+result);
+                TextView textView = (TextView) findViewById(R.id.annotation_text);
+                String[] parts =result.split("_");
+                int resId = getResources().getIdentifier(parts[0], "string", getPackageName());
+                textView.setText(getString(resId));
+
+                //textView.setBackground(Drawable.createFromPath(imageFile.getAbsolutePath()));
             } else {
                 Log.v(LOGTAG, "imageview is  empty");
             }
         }else
             Log.v(LOGTAG, "imagefile doesn't exists");
 
-        String result = getIntent().getStringExtra("result");
-        Log.v(LOGTAG,"result = "+result);
-        TextView textView = (TextView) findViewById(R.id.annotation_text);
-        textView.setText(result);
+
 
 
 

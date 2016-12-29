@@ -15,6 +15,8 @@ import org.opencv.core.Mat;
 
 import java.io.File;
 
+import static android.R.attr.label;
+
 /**
  * Created by HOME on 24-12-2016.
  */
@@ -74,7 +76,9 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
     @Override
     protected void onPostExecute(String str) {
         TextView textView = (TextView)activity.findViewById(R.id.sample_text);
-        textView.setText(num);
+        String[] parts = num.split("_");
+        int resId = context.getResources().getIdentifier(parts[0], "string", context.getPackageName());
+        textView.setText(context.getString(resId));
 
         Intent intent = new Intent(context, AnnotationActivity.class);
         intent.putExtra("result",num);
