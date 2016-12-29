@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -15,6 +16,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+
+import java.io.File;
 
 import static com.example.home.BequestProto.PackageDownloader.LOGTAG;
 
@@ -48,15 +51,17 @@ public class MainActivity extends AppCompatActivity {
 
         LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
 
-//        checkForDownload();
+      checkForDownload();
 
       Button button = (Button) findViewById(R.id.openCamera);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                JNiActivity jNiActivity = new JNiActivity(MainActivity.this, MainActivity.this);
-                jNiActivity.execute();
+                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);//Making an intent
+                Uri imageUri = Uri.fromFile(new File(Environment.getExternalStorageDirectory(),"beq.jpg"));
+                intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, imageUri);
+                startActivityForResult(intent,Click);//Calling camera
 
                 //Intent intent = new Intent(MainActivity.this, CameraActivity.class);
                 //startActivity(intent);
@@ -75,8 +80,12 @@ public class MainActivity extends AppCompatActivity {
     {
         if(requestcode==Click && resultcode==RESULT_OK)
         {
-            Bundle extras=data.getExtras();
-            Bitmap img=(Bitmap) extras.get("data");//The result bitmap
+            JNiActivity jNiActivity = new JNiActivity(MainActivity.this, MainActivity.this);
+            jNiActivity.execute();
+            //Intent i1 = new Intent(this, AnnotationActivity.class);
+            //startActivity(i1);
+            //finish();
+
         }
     }
     
@@ -84,20 +93,23 @@ public class MainActivity extends AppCompatActivity {
 
 
         launchPreferenceManager = new LaunchPreferenceManager(MainActivity.this);
-        Button button = (Button) findViewById(R.id.openCamera);
+        final Button button = (Button) findViewById(R.id.openCamera);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);//Making an intent
+                Uri imageUri = Uri.fromFile(new File(Environment.getExternalStorageDirectory(),"beq.jpg"));
+                intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, imageUri);
                 startActivityForResult(intent,Click);//Calling camera
 
             }
         });
 
-        try {
+        /*try {
 
             if (!launchPreferenceManager.isDownloaded()) {
+                button.setVisibility(View.INVISIBLE);
                 button.setEnabled(false);
                 //From second time whenever this app is opened, this activity is shown
                 new AlertDialog.Builder(MainActivity.this)
@@ -106,6 +118,16 @@ public class MainActivity extends AppCompatActivity {
                             // do something when the button is clicked
                             public void onClick(DialogInterface arg0, int arg1) {
                                 new PackageDownloader(MainActivity.this, MainActivity.this).execute("hello");
+                                try {
+
+                                    if (launchPreferenceManager.isDownloaded()) {
+                                        button.setVisibility(View.VISIBLE);
+                                        button.setEnabled(true);
+                                    }
+                                } catch (Exception e) {
+                                    Log.e(LOGTAG, e.toString());
+                                }
+
                             }
                         })
                         .setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -117,11 +139,12 @@ public class MainActivity extends AppCompatActivity {
                         .show();
 
             } else {
+                button.setVisibility(View.VISIBLE);
                 button.setEnabled(true);
             }
         } catch (Exception e) {
             Log.e(LOGTAG, e.toString());
-        }
+        }*/
 
 
 

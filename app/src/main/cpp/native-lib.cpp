@@ -365,7 +365,7 @@ void Java_com_example_home_BequestProto_JNiActivity_GetMatch(JNIEnv *env, jobjec
     GetJStringContent(env,fileLocation,str);
 
     //str = str.append("/temp.jpg").c_str();
-    str = str+"/temp1.jpg";
+    str = str+"/beq.jpg";
 
     Mat img_temp = imread(str);
 

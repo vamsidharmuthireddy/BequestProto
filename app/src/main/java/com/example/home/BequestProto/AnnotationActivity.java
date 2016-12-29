@@ -26,7 +26,7 @@ public class AnnotationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_annotation);
 
 
-        File imageFile = new File(Environment.getExternalStorageDirectory(),"temp1.jpg");
+        File imageFile = new File(Environment.getExternalStorageDirectory(),"beq.jpg");
         if(imageFile.exists()) {
             Log.v("Annotation", "Image file exists");
             BitmapFactory.Options options = new BitmapFactory.Options();
@@ -44,6 +44,7 @@ public class AnnotationActivity extends AppCompatActivity {
             Log.v(LOGTAG, "imagefile doesn't exists");
 
         String result = getIntent().getStringExtra("result");
+        Log.v(LOGTAG,"result = "+result);
         TextView textView = (TextView) findViewById(R.id.annotation_text);
         textView.setText(result);
 

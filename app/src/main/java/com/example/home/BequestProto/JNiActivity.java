@@ -39,7 +39,7 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
     @Override
     protected String doInBackground(Void... params) {
 
-        String path = "temp1.jpg";
+        String path = "beq.jpg";
 
         Mat input = new Mat();
         Mat output = new Mat();
@@ -77,7 +77,7 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
         textView.setText(num);
 
         Intent intent = new Intent(context, AnnotationActivity.class);
-        intent.putExtra("result",str);
+        intent.putExtra("result",num);
         context.startActivity(intent);
 
     }

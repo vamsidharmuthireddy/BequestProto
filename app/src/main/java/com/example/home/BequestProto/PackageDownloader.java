@@ -9,6 +9,7 @@ import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.Toast;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -34,7 +35,7 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
      */
     public static final int READ_TIMEOUT = 15000;
     public static final int CONNECTION_TIMEOUT = 10000;
-    public static final String LOGTAG = "Heritage";
+    public static final String LOGTAG = "BequestProto";
 
 
     private URL url;
@@ -57,7 +58,7 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
 
         EXTRACT_DIR = "BequestProto/extracted/";
         COMPRESSED_DIR = "BequestProto/compressed/";
-        packageUrl =  "http://preon.iiit.ac.in/~heritage/public_html/packages/";
+        packageUrl =  "http://preon.iiit.ac.in/~heritage/packages/";
         packageFormat = ".tar.gz";
     }
 
@@ -76,7 +77,7 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
         progressDialog.setCancelable(false);
         progressDialog.show();
 
-        //       Log.v(LOGTAG, "Progress is " + progressDialog.getProgress());
+        //Log.v(LOGTAG, "Progress is " + progressDialog.getProgress());
     }
 
     /**
@@ -87,10 +88,10 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
      */
     @Override
     protected String doInBackground(String... params) {
-//        basePackageName = params[0];
-//        packageName = params[0] + packageFormat;
-//        String address = packageUrl + packageName;
-        packageName = "index.txt";
+        basePackageName = "image";
+        packageName = basePackageName + packageFormat;
+        //String address = packageUrl + packageName;
+        //packageName = "image";
         String address = packageUrl + packageName;
         Log.v("doInBackground",address);
         initializeDirectory();
@@ -131,6 +132,8 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
                     archiveStream.close();
                 } catch (IOException e) {
                     Log.i(LOGTAG, e.toString());
+                    Toast.makeText(_context,"Not Found",Toast.LENGTH_SHORT).show();
+
                     return "Connection Lost";
                 }
 
