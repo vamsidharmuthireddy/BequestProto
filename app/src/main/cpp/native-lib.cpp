@@ -351,6 +351,106 @@ JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadMyDat
 }
 }
 
+extern "C" {
+JNIEXPORT void JNICALL Java_com_example_home_BequestProto_PackageDownloader_LoadMyData(JNIEnv* env, jobject thiz, jstring fileLocation)
+{
+
+    //=======================================
+    //	Loading #images in database
+    //=======================================
+    string str;
+    GetJStringContent(env, fileLocation, str);
+
+    N = 978;
+    N_orig = N;
+
+    //=======================================
+    //	Loading Inverted Index File
+    //=======================================
+    String Iindex = str + "/BequestProto2/InvertedIndex_10000_10.txt";
+    ifstream InvertedIndexFile(Iindex.c_str(),ios::in);
+
+    LOGI("ProgressCheck: InvertedFile open status: %d", InvertedIndexFile.is_open());
+
+    int prune_count = 0;
+    int vword, vcount, vimage, vnum;
+    while(InvertedIndexFile.good()){
+        InvertedIndexFile >> vword >> vcount;		//loading inverted index
+        for(int i = 0 ; i < vcount ; i++ ){
+            InvertedIndexFile >> vimage >> vnum ;
+            InvertedFile[vword][vimage] = vnum;
+        }
+//        LOGI("ProgressCheck: InvertedFile[%d].size()= %d",vword,InvertedFile[vword].size());
+        if( InvertedFile[ vword ].size() > 500 ){
+            InvertedFile.erase( vword );
+            prune_count++;
+        }
+    }
+    InvertedIndexFile.close();
+    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","InvertedIndexFile Loaded");
+    LOGI("ProgressCheck: InvertedFile size= %d",(int)InvertedFile.size());
+    LOGI("ProgressCheck: Prune count is %d",prune_count);
+
+    //=======================================
+    //	Loading the HKMeans Tree
+    //=======================================
+    String Hktree = str +"/BequestProto2/HKMeans_10000_10.Tree";
+    ifstream t_file(Hktree.c_str(),ios::in);	//loading the tree
+    LOGI("ProgressCheck: Tree file open status: %d", t_file.is_open());
+    tree = ParseTree(t_file,0);				//parsing the tree
+    t_file.close();
+    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","HKMeans tree Loaded");
+
+    //======================================================
+    //	Loading Image file names and Term Frequency Count
+    //======================================================
+    string imageListFileName = str + "/BequestProto2/image_names.txt";
+
+    string temp;
+    ifstream imageListFile;
+    imageListFile.open(imageListFileName.c_str(),ios::in);
+    LOGI("ProgressCheck: Name list file open status: %d", imageListFile.is_open());
+    string TF_filename = str + "/BequestProto2/descCount.txt";
+
+    int tempTF;
+    ifstream TF_file;
+    TF_file.open(TF_filename.c_str(), ios::in );
+    LOGI("ProgressCheck: Desc Count file open status: %d", TF_file.is_open());
+
+    for(int i = 1 ; i <= N ; i++ ){
+        imageListFile >> temp;
+        ImageList.push_back( temp );		//all the image names go into ImageList
+//        LOGI("ProgressCheck: Checking ImageList[i]: %s", ImageList[i-1].c_str() );
+        TF_file >> tempTF;
+        TF.push_back(tempTF);				//all the descriptor counts go into TF
+    }
+    //=======================================
+    //	Loading Image file names
+    //=======================================
+    /*         ifstream an1_file("/sdcard/Golkonda_5500/AnnInfo.txt",ios::in);
+         ifstream an2_file("/sdcard/Golkonda_5500/AnnText.txt",ios::in);
+         ifstream an3_file("/sdcard/Golkonda_5500/AnnBoundary.txt",ios::in);
+         int TotalAnn;
+         an1_file>>TotalAnn;
+         string TempImageId;
+         for( int i = 0 ; i < TotalAnn ; i++ ){
+                Annotation TempAnn;
+                an1_file >> TempImageId >> TempAnn.type ;
+                getline( an2_file , TempAnn.text );
+                if( TempAnn.type.compare("OBJECT") == 0 ){
+                       an3_file >> TempAnn.boundary;
+                }
+                ImageAnns[ TempImageId ].push_back(TempAnn);
+         }
+         an1_file.close();
+         an2_file.close();
+         an3_file.close();
+
+     */
+
+}
+}
+
 
 extern "C" {
 void Java_com_example_home_BequestProto_JNiActivity_GetMatch(JNIEnv *env, jobject thiz, jlong inAddress,
@@ -490,20 +590,9 @@ void Java_com_example_home_BequestProto_JNiActivity_GetMatch(JNIEnv *env, jobjec
 
     qsort( ImagesRetrieved + 1, N , sizeof(ImagesRetrieved[ 1 ]), compare );
 
-    for (int i=1;i<=N;i++){
+/*    for (int i=1;i<=N;i++){
         LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %f", ImagesRetrieved[ i ].index,ImagesRetrieved[ i ].r_score );
     }
-/*
-    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 1 ].index,ImagesRetrieved[ 1 ].r_score );
-    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 2 ].index,ImagesRetrieved[ 2 ].r_score );
-    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 3 ].index,ImagesRetrieved[ 3 ].r_score );
-    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 4 ].index,ImagesRetrieved[ 4 ].r_score );
-    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 5 ].index,ImagesRetrieved[ 5 ].r_score);
-    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 6 ].index,ImagesRetrieved[ 6 ].r_score );
-    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 7 ].index,ImagesRetrieved[ 7 ].r_score );
-    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 8 ].index,ImagesRetrieved[ 8 ].r_score );
-    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 9 ].index,ImagesRetrieved[ 9 ].r_score );
-    LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %d", ImagesRetrieved[ 10 ].index,ImagesRetrieved[ 10 ].r_score );
 */    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","Inverted index search is done");
 
 
@@ -666,7 +755,7 @@ jstring JNICALL Java_com_example_home_BequestProto_JNiActivity_GeoVerify(JNIEnv 
 
 extern "C"
 jstring Java_com_example_home_BequestProto_MainActivity_stringFromJNI(JNIEnv *env, jobject /* this */) {
-    std::string hello = "Welcome to hell";
+    std::string hello = "Welcome";
     return env->NewStringUTF(hello.c_str());
 }
 

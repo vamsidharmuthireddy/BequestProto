@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -35,7 +36,7 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
      */
     public static final int READ_TIMEOUT = 15000;
     public static final int CONNECTION_TIMEOUT = 10000;
-    public static final String LOGTAG = "BequestProto";
+    public static final String LOGTAG = "PackageDownloader";
 
 
     private URL url;
@@ -56,9 +57,11 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
         _context = context;
         _activity = activity;
 
-        EXTRACT_DIR = "BequestProto/extracted/";
-        COMPRESSED_DIR = "BequestProto/compressed/";
-        packageUrl =  "http://preon.iiit.ac.in/~heritage/packages/";
+        EXTRACT_DIR = "";
+        COMPRESSED_DIR = "";
+        //packageUrl =  "https://spyd123.pythonanywhere.com/welcome/static/sample.tar";
+        //packageUrl =  "http://preon.iiit.ac.in/~heritage/packages/";
+        packageUrl =  "https://spyd123.pythonanywhere.com/welcome/static/BequestProto2.tar.gz";
         packageFormat = ".tar.gz";
     }
 
@@ -88,11 +91,10 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
      */
     @Override
     protected String doInBackground(String... params) {
-        basePackageName = "image";
+        basePackageName = "BequestProto2";
         packageName = basePackageName + packageFormat;
-        //String address = packageUrl + packageName;
-        //packageName = "image";
-        String address = packageUrl + packageName;
+
+        String address = packageUrl;// + packageName;
         Log.v("doInBackground",address);
         initializeDirectory();
         File baseLocal = Environment.getExternalStorageDirectory();
@@ -137,8 +139,9 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
                     return "Connection Lost";
                 }
 
-                //Log.i(LOGTAG, "Download Finished");
-                //ExtractPackage(basePackageName);
+                Log.i(LOGTAG, "Download Finished");
+                ExtractPackage(basePackageName);
+                LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
 
                 return "Package Download Completed";
             } else {
@@ -188,13 +191,20 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
                 public void onClick(DialogInterface arg0, int arg1) {
                     Button button = (Button)_activity.findViewById(R.id.openCamera);
                     button.setEnabled(true);
+                    button.setVisibility(View.VISIBLE);
                     LaunchPreferenceManager launchPreferenceManager = new LaunchPreferenceManager(_context);
                     launchPreferenceManager.setDownloaded(true);
                 }
             });
 
-            alertDialog.setMessage(result+"\nClick to view "+basePackageName);
+            alertDialog.setMessage("Download Complete");
             alertDialog.show();
+            Button button = (Button)_activity.findViewById(R.id.openCamera);
+            button.setEnabled(true);
+            button.setVisibility(View.VISIBLE);
+            LaunchPreferenceManager launchPreferenceManager = new LaunchPreferenceManager(_context);
+            launchPreferenceManager.setDownloaded(true);
+
 
         }else{
 
@@ -237,7 +247,7 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
         File baseLocal = Environment.getExternalStorageDirectory();
         File archive = new File(baseLocal, COMPRESSED_DIR + packageName);
         File destination = new File(baseLocal, EXTRACT_DIR );
-        Log.v("downloading directory", Environment.getExternalStorageDirectory()+EXTRACT_DIR);
+        Log.v("downloading directory", Environment.getExternalStorageDirectory()+"/"+EXTRACT_DIR);
 
 
         try {
@@ -276,4 +286,9 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
 
 
     }
+
+
+    public native void LoadMyData(String filelocation);
+
+
 }

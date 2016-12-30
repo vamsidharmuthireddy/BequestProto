@@ -1,9 +1,13 @@
 package com.example.home.BequestProto;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -23,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
 
     LaunchPreferenceManager launchPreferenceManager;
 
+    private static final String LOGTAG = "MainActivity";
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final int PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 2;
     private static final int PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 3;
@@ -49,16 +54,13 @@ public class MainActivity extends AppCompatActivity {
 //        LoadData(Environment.getExternalStorageDirectory().getAbsolutePath());
 
         if (checkPermission()) {
-            LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
+            checkForDownload();
+            //LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
 
         } else {
             requestPermission();
         }
 
-
-//        LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
-
-//      checkForDownload();
 
       Button button = (Button) findViewById(R.id.openCamera);
         button.setOnClickListener(new View.OnClickListener() {
@@ -128,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        /*try {
+        try {
 
             if (!launchPreferenceManager.isDownloaded()) {
                 button.setVisibility(View.INVISIBLE);
@@ -140,15 +142,6 @@ public class MainActivity extends AppCompatActivity {
                             // do something when the button is clicked
                             public void onClick(DialogInterface arg0, int arg1) {
                                 new PackageDownloader(MainActivity.this, MainActivity.this).execute("hello");
-                                try {
-
-                                    if (launchPreferenceManager.isDownloaded()) {
-                                        button.setVisibility(View.VISIBLE);
-                                        button.setEnabled(true);
-                                    }
-                                } catch (Exception e) {
-                                    Log.e(LOGTAG, e.toString());
-                                }
 
                             }
                         })
@@ -161,12 +154,20 @@ public class MainActivity extends AppCompatActivity {
                         .show();
 
             } else {
+                new Loader().execute();
+            }
+        } catch (Exception e) {
+            Log.e(LOGTAG, e.toString());
+        }
+        try {
+
+            if (launchPreferenceManager.isDownloaded()) {
                 button.setVisibility(View.VISIBLE);
                 button.setEnabled(true);
             }
         } catch (Exception e) {
             Log.e(LOGTAG, e.toString());
-        }*/
+        }
 
 
 
@@ -182,7 +183,8 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
+                    checkForDownload();
+                    //LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
                 } else {
                     Log.e("value", "Permission Denied, You cannot use local drive .");
                 }
@@ -212,6 +214,49 @@ public class MainActivity extends AppCompatActivity {
 
         MainActivity.this.startActivity(intent_permissions);
     }
+
+
+
+    private class Loader extends AsyncTask<Void, Void, Void> {
+
+
+        private ProgressDialog progressDialog;
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            progressDialog = new ProgressDialog(MainActivity.this);
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            progressDialog.setIndeterminate(false);
+            progressDialog.setProgress(0);
+            progressDialog.setMessage("Loading Files");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+
+            //Log.v(LOGTAG, "Progress is " + progressDialog.getProgress());
+        }
+        @Override
+        protected Void doInBackground(Void... params) {
+            LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
+            return null;
+        }
+
+        protected void onProgressUpdate(String... progress) {
+            // setting progress percentage
+            progressDialog.setProgress(Integer.parseInt(progress[0]));
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            progressDialog.dismiss();
+            final Button button = (Button) findViewById(R.id.openCamera);
+            button.setVisibility(View.VISIBLE);
+            button.setEnabled(true);
+
+        }
+    }
+
+
 
 
 

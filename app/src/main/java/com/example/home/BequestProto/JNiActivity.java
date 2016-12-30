@@ -92,10 +92,13 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
     protected void onPostExecute(String str) {
         progressDialog.dismiss();
         TextView textView = (TextView)activity.findViewById(R.id.sample_text);
-        String[] parts = num.split("_");
-        int resId = context.getResources().getIdentifier(parts[0], "string", context.getPackageName());
-        textView.setText(context.getString(resId));
-
+        if(num != null && !num.equals("") ) {
+            String[] parts = num.split("_");
+            int resId = context.getResources().getIdentifier(parts[0], "string", context.getPackageName());
+            textView.setText(context.getString(resId));
+        }else{
+            textView.setText("Not able to retrieve information");
+        }
         Intent intent = new Intent(context, AnnotationActivity.class);
         intent.putExtra("result",num);
         context.startActivity(intent);
