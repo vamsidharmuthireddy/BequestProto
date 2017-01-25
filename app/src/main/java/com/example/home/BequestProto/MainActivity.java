@@ -49,20 +49,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
-
-//        LoadData(Environment.getExternalStorageDirectory().getAbsolutePath());
 
         if (checkPermission()) {
             checkForDownload();
-            //LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
 
         } else {
             requestPermission();
         }
 
 
-      Button button = (Button) findViewById(R.id.openCamera);
+ /*     Button button = (Button) findViewById(R.id.openCamera);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -75,10 +71,10 @@ public class MainActivity extends AppCompatActivity {
             }
 
         });
-
+*/
 //        ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
 
-        Log.v("AFTER_JNI","Done storing the image");
+ //       Log.v("AFTER_JNI","Done storing the image");
 
     }
 
@@ -96,6 +92,12 @@ public class MainActivity extends AppCompatActivity {
 
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
             Toast.makeText(this, "Write External Storage permission allows us to do store images. Please allow this permission in App Settings.", Toast.LENGTH_LONG).show();
+            Button button = (Button) findViewById(R.id.openCamera);
+            button.setVisibility(View.INVISIBLE);
+            button.setEnabled(false);
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 3);
+
+
         } else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 3);
@@ -117,6 +119,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         launchPreferenceManager = new LaunchPreferenceManager(MainActivity.this);
+        Log.v(LOGTAG,  "isDownloaded = "+launchPreferenceManager.isDownloaded());
         final Button button = (Button) findViewById(R.id.openCamera);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -186,16 +189,19 @@ public class MainActivity extends AppCompatActivity {
                     checkForDownload();
                     //LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
                 } else {
+
                     Log.e("value", "Permission Denied, You cannot use local drive .");
+
                 }
             case PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
                 } else {
                     if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                        Toast.makeText(this, "Write External Storage permission allows us to do store images. Please allow this permission in App Settings.", Toast.LENGTH_LONG).show();
                         openApplicationPermissions();
                     } else {
-                        openApplicationPermissions();
+                        //openApplicationPermissions();
                     }
                 }
             }
@@ -207,6 +213,7 @@ public class MainActivity extends AppCompatActivity {
         final Intent intent_permissions = new Intent();
         intent_permissions.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
         intent_permissions.addCategory(Intent.CATEGORY_DEFAULT);
+        intent_permissions.setData(Uri.parse("package:" + MainActivity.this.getPackageName()));
 
         intent_permissions.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent_permissions.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
@@ -214,6 +221,7 @@ public class MainActivity extends AppCompatActivity {
 
         MainActivity.this.startActivity(intent_permissions);
     }
+
 
 
 
