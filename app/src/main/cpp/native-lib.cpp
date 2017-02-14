@@ -590,10 +590,10 @@ void Java_com_example_home_BequestProto_JNiActivity_GetMatch(JNIEnv *env, jobjec
 
     qsort( ImagesRetrieved + 1, N , sizeof(ImagesRetrieved[ 1 ]), compare );
 
-/*    for (int i=1;i<=N;i++){
-        LOGI("ProgressCheck: Image number in Iindex search: %d and r_score = %f", ImagesRetrieved[ i ].index,ImagesRetrieved[ i ].r_score );
+    for (int i=1;i<=10;i++){
+        LOGI("ProgressCheck: Image number in Iindex search: %s and r_score = %f", ImageList[ImagesRetrieved[ i ].index - 1].c_str(),ImagesRetrieved[ i ].r_score );
     }
-*/    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","Inverted index search is done");
+    __android_log_write(ANDROID_LOG_VERBOSE,"Progress","Inverted index search is done");
 
 
     /* search ends*/
@@ -693,9 +693,9 @@ jstring JNICALL Java_com_example_home_BequestProto_JNiActivity_GeoVerify(JNIEnv 
 
         ImagesRetrieved[ n ].m_score = 1.0 * it ;		//score of image based on inliers size
 
-        if(it < 3 ) continue;	//if inliers are less than three then don't bother about object corners
+/*        if(it < 3 ) continue;	//if inliers are less than three then don't bother about object corners
 
-/*
+
 		std::vector<Point2f> obj_corners(4);
 		if(argc > 2 && argc == 6){
 			obj_corners[0] = cvPoint( atof(argv[2]),atof(argv[3]) ); obj_corners[1] = cvPoint(  atof(argv[4]),atof(argv[3]) );
@@ -724,7 +724,10 @@ jstring JNICALL Java_com_example_home_BequestProto_JNiActivity_GeoVerify(JNIEnv 
 
     keypoints.erase(keypoints.begin(),keypoints.end());
 
-
+    for (int i=1;i<=10;i++){
+        LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ i ].index  - 1 ].c_str(),ImagesRetrieved[ i ].m_score );
+    }
+/**
     LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 1 ].index  - 1 ].c_str(),ImagesRetrieved[ 1 ].m_score);
     LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 2 ].index  - 1 ].c_str(),ImagesRetrieved[ 2 ].m_score);
     LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 3 ].index  - 1 ].c_str(),ImagesRetrieved[ 3 ].m_score);
@@ -735,10 +738,16 @@ jstring JNICALL Java_com_example_home_BequestProto_JNiActivity_GeoVerify(JNIEnv 
     LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 8 ].index  - 1 ].c_str(),ImagesRetrieved[ 8 ].m_score);
     LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 9 ].index  - 1 ].c_str(),ImagesRetrieved[ 9 ].m_score);
     LOGI("ProgressCheck: Image : %s, m_score = %f", ImageList[ImagesRetrieved[ 10 ].index  - 1].c_str(),ImagesRetrieved[ 10 ].m_score);
+**/
 
-
-    string Top = ImageList[ ImagesRetrieved[ 1 ].index - 1 ];	//Top retrieved image
-
+    string Top;
+    //set the number in the if case after testing it out on printouts
+    if(ImagesRetrieved[ 1 ].m_score > 3){
+        Top = ImageList[ ImagesRetrieved[ 1 ].index - 1 ];
+    }	//Top retrieved image
+    else{
+        Top = "";
+    }
 //    stringstream ss;
 //    ss << ImagesRetrieved[1].index;
 //    String imgNum = ss.str();
