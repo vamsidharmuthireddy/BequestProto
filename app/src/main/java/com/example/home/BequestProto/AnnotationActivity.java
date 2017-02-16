@@ -43,7 +43,9 @@ public class AnnotationActivity extends AppCompatActivity {
                 if(result != null && !result.equals("") ) {
                     String[] parts = result.split("_");
                     int resId = getResources().getIdentifier(parts[0], "string", getPackageName());
-                    textView.setText(getString(resId));
+                    //textView.setText(getString(resId));
+                    textView.setText(parts[2]+"\n"+parts[3]+"\n"+getString(resId));
+                    Log.v("inliers","m_score = "+parts[2]+"r_score"+parts[3]);
                 }else{
                     textView.setText("Not able to retrieve information");
                 }

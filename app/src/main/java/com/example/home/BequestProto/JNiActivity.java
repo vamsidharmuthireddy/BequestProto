@@ -95,7 +95,9 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
         if(num != null && !num.equals("") ) {
             String[] parts = num.split("_");
             int resId = context.getResources().getIdentifier(parts[0], "string", context.getPackageName());
-            textView.setText(context.getString(resId));
+            //textView.setText(context.getString(resId));
+            textView.setText("inliers = "+parts[2]+"\n"+"r_score = "+parts[3]);
+
         }else{
             textView.setText("Not able to retrieve information");
         }

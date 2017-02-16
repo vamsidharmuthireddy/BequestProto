@@ -744,6 +744,16 @@ jstring JNICALL Java_com_example_home_BequestProto_JNiActivity_GeoVerify(JNIEnv 
     //set the number in the if case after testing it out on printouts
     if(ImagesRetrieved[ 1 ].m_score > 3){
         Top = ImageList[ ImagesRetrieved[ 1 ].index - 1 ];
+        stringstream ss;
+        ss << ImagesRetrieved[ 1 ].m_score;
+        String imgInliers = ss.str();
+        Top = Top + "_"+imgInliers;
+        stringstream st;
+        st << ImagesRetrieved[ 1 ].r_score;
+        LOGI("ProgressCheck: Image : %s, r_score = %f", ImageList[ImagesRetrieved[ 1 ].index  - 1].c_str(),ImagesRetrieved[ 1 ].r_score);
+        String imgR_score = st.str();
+        Top = Top + "_"+imgR_score;
+
     }	//Top retrieved image
     else{
         Top = "";
