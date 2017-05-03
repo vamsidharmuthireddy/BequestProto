@@ -1,4 +1,4 @@
-package com.example.home.BequestProto;
+package in.ac.iiit.cvit.bequest;
 
 /**
  * Created by HOME on 20-12-2016.

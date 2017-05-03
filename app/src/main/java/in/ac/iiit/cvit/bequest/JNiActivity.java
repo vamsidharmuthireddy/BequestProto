@@ -1,4 +1,4 @@
-package com.example.home.BequestProto;
+package in.ac.iiit.cvit.bequest;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 
 import org.opencv.android.Utils;
@@ -42,6 +43,7 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
     protected void onPreExecute() {
         super.onPreExecute();
 
+        //activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         progressDialog = new ProgressDialog(context);
         progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         progressDialog.setIndeterminate(false);
@@ -61,7 +63,7 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
         Mat input = new Mat();
         Mat output = new Mat();
 
-        File imageFile = new File(Environment.getExternalStorageDirectory(),path);
+        File imageFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), path);
         if(imageFile.exists()) {
             Log.v(LOGTAG,"Image file exists");
             BitmapFactory.Options options = new BitmapFactory.Options();
@@ -76,11 +78,36 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
             long inad = input.getNativeObjAddr();
             long outad = output.getNativeObjAddr();
 
-
             String fileAddress = Environment.getExternalStorageDirectory().getAbsolutePath();
             GetMatch(inad,fileAddress);
             Log.v(LOGTAG,"Done implementing GetMatch, going to call GeoVerify");
             num = GeoVerify(fileAddress);
+/*
+
+            try {
+                FileOutputStream fos = new FileOutputStream(imageFile);
+                int height = outputImageBitmap.getHeight();
+                int width = outputImageBitmap.getWidth();
+                Log.v(LOGTAG,"width = "+width+" height = "+height);
+
+
+                if(height > width){
+                    //imageView.setRotation(-90.0f);
+                    Matrix matrix = new Matrix();
+
+                    matrix.postRotate(-90);
+                    //Bitmap random = Bitmap.createBitmap(outputImageBitmap, 0,0,width,height,matrix,true);
+                    outputImageBitmap = Bitmap.createBitmap(outputImageBitmap, 0,0,width,height,matrix,true);
+                }
+                outputImageBitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+                fos.close();
+            } catch (FileNotFoundException e) {
+                Log.d(LOGTAG, "File not found: " + e.getMessage());
+            } catch (IOException e) {
+                Log.d(LOGTAG, "Error accessing file: " + e.getMessage());
+            }
+*/
+
 
             return num;
         }
@@ -91,19 +118,22 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
     @Override
     protected void onPostExecute(String str) {
         progressDialog.dismiss();
-        TextView textView = (TextView)activity.findViewById(R.id.sample_text);
+        TextView textView = (TextView) activity.findViewById(R.id.annotation_text);
         if(num != null && !num.equals("") ) {
             String[] parts = num.split("_");
             int resId = context.getResources().getIdentifier(parts[0], "string", context.getPackageName());
-            //textView.setText(context.getString(resId));
-            textView.setText("inliers = "+parts[2]+"\n"+"r_score = "+parts[3]);
+            Log.v(LOGTAG, "resId = " + resId);
+            textView.setText(context.getString(resId));
+            textView.setVisibility(View.VISIBLE);
+            //textView.setText("inliers = "+parts[2]+"\n"+"r_score = "+parts[3]);
 
         }else{
             textView.setText("Not able to retrieve information");
+            textView.setVisibility(View.VISIBLE);
         }
         Intent intent = new Intent(context, AnnotationActivity.class);
         intent.putExtra("result",num);
-        context.startActivity(intent);
+//        context.startActivity(intent);
 
     }
 

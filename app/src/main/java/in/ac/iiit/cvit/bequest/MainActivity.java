@@ -1,4 +1,4 @@
-package com.example.home.BequestProto;
+package in.ac.iiit.cvit.bequest;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -11,7 +11,6 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -20,8 +19,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-
-import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -33,6 +30,13 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 3;
     private static final int PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 4;
     private static final int Click = 5;
+    private static final int PERMISSIONS_REQUEST_CAMERA = 6;
+
+
+    private int totalPermissions = 0;
+    private boolean storageRequested = false;
+    private boolean cameraRequested = false;
+
     // Used to load the 'native-lib' library on application startup.
     static {
         try {
@@ -49,13 +53,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-        if (checkPermission()) {
-            checkForDownload();
-
-        } else {
-            requestPermission();
-        }
+        checkAllPermissions();
 
 
  /*     Button button = (Button) findViewById(R.id.openCamera);
@@ -79,7 +77,32 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    protected boolean checkPermission() {
+    private void checkAllPermissions() {
+        //Setting Camera permissions
+        if (checkCameraPermission()) {
+            cameraRequested = true;
+            Log.v(LOGTAG, "MainActivity has Location permission");
+        } else {
+            Log.v(LOGTAG, "MainActivity Requesting Location permission");
+            requestCameraPermission();
+        }
+        //Setting Storage permissions
+        if (checkStoragePermission()) {
+            storageRequested = true;
+            Log.v(LOGTAG, "MainActivity has storage permission");
+            checkForDownload();
+        } else {
+            Log.v(LOGTAG, "MainActivity Requesting storage permission");
+            requestStoragePermission();
+        }
+    }
+
+    /**
+     * Checking if read/write permissions are set or not
+     *
+     * @return
+     */
+    protected boolean checkStoragePermission() {
         int result = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE);
         if (result == PackageManager.PERMISSION_GRANTED) {
             return true;
@@ -88,27 +111,73 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    protected void requestPermission() {
+    protected boolean checkCameraPermission() {
+        int result = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
+        if (result == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    protected void requestStoragePermission() {
 
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            //Toast.makeText(this, getString(R.string.storage_permission_request), Toast.LENGTH_LONG).show();
             Toast.makeText(this, "Write External Storage permission allows us to do store images. Please allow this permission in App Settings.", Toast.LENGTH_LONG).show();
             Button button = (Button) findViewById(R.id.openCamera);
             button.setVisibility(View.INVISIBLE);
             button.setEnabled(false);
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 3);
+            ActivityCompat.requestPermissions(MainActivity.this,
+                    new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
 
+            Log.v(LOGTAG, "requestStoragePermission if");
 
         } else {
+            Log.v(LOGTAG, "requestStoragePermission else");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 3);
+                ActivityCompat.requestPermissions(MainActivity.this,
+                        new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
             }
         }
     }
 
+    protected void requestCameraPermission() {
+
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
+            //toast to be shown while requesting permissions
+            //Toast.makeText(this, getString(R.string.gps_permission_request), Toast.LENGTH_LONG).show();
+            Log.v(LOGTAG, "requestCameraPermission if");
+            ActivityCompat.requestPermissions(MainActivity.this,
+                    new String[]{Manifest.permission.CAMERA}, PERMISSIONS_REQUEST_CAMERA);
+
+        } else {
+            Log.v(LOGTAG, "requestCameraPermission else");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                ActivityCompat.requestPermissions(MainActivity.this,
+                        new String[]{Manifest.permission.CAMERA}, PERMISSIONS_REQUEST_CAMERA);
+            }
+        }
+    }
+
+
     protected void onActivityResult(int requestcode, int resultcode,Intent data)//Called after the intent
     {
-        if(requestcode==Click && resultcode==RESULT_OK)
-        {
+        super.onActivityResult(requestcode, resultcode,data);
+        if(requestcode==Click && resultcode==RESULT_OK) {
+
+            /*Bundle extras = data.getExtras();
+            Bitmap imageBitmap = (Bitmap) extras.get(android.provider.MediaStore.EXTRA_OUTPUT);
+            if(imageBitmap==null){
+                Log.v(LOGTAG,"image is null");
+            }else{
+                Log.v(LOGTAG,"image is not null");
+            }
+*/
+
+            //Picture has been clicked and saved to storage.
+            //Now perform search
             JNiActivity jNiActivity = new JNiActivity(MainActivity.this, MainActivity.this);
             jNiActivity.execute();
 
@@ -125,10 +194,20 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);//Making an intent
-                Uri imageUri = Uri.fromFile(new File(Environment.getExternalStorageDirectory(),"beq.jpg"));
-                intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, imageUri);
-                startActivityForResult(intent,Click);//Calling camera
+                //All the permissions are set. Call camera on button click
+                /*Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);//Making an intent
+                Uri imageUri = Uri.fromFile(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),"beq.jpg"));
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+                takePictureIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY |
+                        Intent.FLAG_ACTIVITY_NEW_DOCUMENT |
+                        Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+                if(takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                    startActivityForResult(takePictureIntent,Click);//Calling camera
+                }*/
+
+                Intent takePicture = new Intent(MainActivity.this, CameraActivity.class);
+                startActivity(takePicture);
+
 
             }
         });
@@ -185,27 +264,65 @@ public class MainActivity extends AppCompatActivity {
 
         switch (requestCode) {
             case PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE:
+                storageRequested = true;
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    totalPermissions = totalPermissions + 1;
                     checkForDownload();
                     //LoadMyData(Environment.getExternalStorageDirectory().getAbsolutePath());
                 } else {
 
-                    Log.e("value", "Permission Denied, You cannot use local drive .");
-
+                    Log.v("value", "Permission Denied, You cannot use local drive .");
+                    totalPermissions = totalPermissions - 1;
                 }
-            case PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE: {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                break;
 
+            case PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE:
+                storageRequested = true;
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.v(LOGTAG, "MainActivity has WRITE storage permissions");
+                    totalPermissions = totalPermissions + 1;
                 } else {
+                    Log.v(LOGTAG, "MainActivity does not have WRITE storage permissions");
+                    totalPermissions = totalPermissions - 1;
                     if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                        Toast.makeText(this, "Write External Storage permission allows us to do store images. Please allow this permission in App Settings.", Toast.LENGTH_LONG).show();
-                        openApplicationPermissions();
+                        //Toast.makeText(this, "Write External Storage permission allows us to do store images. Please allow this permission in App Settings.", Toast.LENGTH_LONG).show();
+                        //openApplicationPermissions();
                     } else {
                         //openApplicationPermissions();
                     }
                 }
-            }
+                break;
+
+            case PERMISSIONS_REQUEST_CAMERA:
+                cameraRequested = true;
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.v(LOGTAG, "MainActivity has WRITE storage permissions");
+                    totalPermissions = totalPermissions + 1;
+                } else {
+                    Log.v(LOGTAG, "MainActivity does not have WRITE storage permissions");
+                    totalPermissions = totalPermissions - 1;
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.CAMERA)) {
+                        //Log.v(LOGTAG,"4 if");
+                        //openApplicationPermissions();
+                    } else {
+                        //Log.v(LOGTAG,"4 else");
+                        //openApplicationPermissions();
+                    }
+                }
+                break;
+
+
         }
+
+        Log.v(LOGTAG, "totalPermissions = " + totalPermissions + " storageRequested = " + storageRequested + " cameraRequested = " + cameraRequested);
+        if (totalPermissions <= 0 & storageRequested & cameraRequested) {
+            //Log.v(LOGTAG, "5");
+            Log.v(LOGTAG, "openApplicationPermissions");
+            openApplicationPermissions();
+        }
+
+
+
     }
 
 

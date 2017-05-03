@@ -1,4 +1,4 @@
-package com.example.home.BequestProto;
+package in.ac.iiit.cvit.bequest;
 
 import android.content.Context;
 import android.content.SharedPreferences;

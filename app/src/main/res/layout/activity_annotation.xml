@@ -1,29 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_annotation"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="com.example.home.BequestProto.AnnotationActivity">
+    tools:context=".AnnotationActivity">
 
 
     <ImageView
         android:id="@+id/sample_image"
         android:layout_width="wrap_content"
-        android:layout_height="400dp" />
+        android:layout_height="wrap_content" />
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignParentTop="false"
-        android:layout_alignParentBottom="false">
+        android:layout_alignParentBottom="false"
+        android:layout_alignParentTop="false">
 
         <TextView
+            android:id="@+id/annotation_text_1"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/annotation_text"/>
+            android:background="@color/trans_background"
+            android:textColor="@android:color/white" />
 
     </ScrollView>
 
-</LinearLayout>
+</RelativeLayout>

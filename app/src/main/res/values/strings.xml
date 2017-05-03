@@ -25,4 +25,11 @@
     <string name="camel">This is where camels were kept</string>
     <string name="dhobi">All the clothes of the royal family used to be washed here</string>
     <string name="whisper">This room was used by the royal ladies to entertain guests. The Sultan, to keep tabs on what was discussed, could even listen in on private conversations because the walls were designed to amplify sound</string>
+    <string name="weight">This block of iron was used to test Strength of Soldiers during their recruitment to Sultan\'s army</string>
+
+    <string name="picture">Picture</string>
+    <string name="description_info">Info</string>
+    <string name="request_permission">This sample needs camera permission.</string>
+    <string name="camera_error">This device doesn\'t support Camera2 API.</string>
+
 </resources>

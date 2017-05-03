@@ -144,7 +144,8 @@ std::vector<KeyPoint> keypoints;
 RImage *ImagesRetrieved;
 
 extern "C" {
-JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadData(JNIEnv* env, jobject thiz, jstring fileLocation)
+JNIEXPORT void JNICALL
+Java_in_ac_iiit_cvit_bequest_MainActivity_LoadData(JNIEnv *env, jobject thiz, jstring fileLocation)
 {
 
     //=======================================
@@ -252,7 +253,9 @@ JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadData(
 
 
 extern "C" {
-JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadMyData(JNIEnv* env, jobject thiz, jstring fileLocation)
+JNIEXPORT void JNICALL
+Java_in_ac_iiit_cvit_bequest_MainActivity_LoadMyData(JNIEnv *env, jobject thiz,
+                                                     jstring fileLocation)
 {
 
     //=======================================
@@ -352,7 +355,9 @@ JNIEXPORT void JNICALL Java_com_example_home_BequestProto_MainActivity_LoadMyDat
 }
 
 extern "C" {
-JNIEXPORT void JNICALL Java_com_example_home_BequestProto_PackageDownloader_LoadMyData(JNIEnv* env, jobject thiz, jstring fileLocation)
+JNIEXPORT void JNICALL
+Java_in_ac_iiit_cvit_bequest_PackageDownloader_LoadMyData(JNIEnv *env, jobject thiz,
+                                                          jstring fileLocation)
 {
 
     //=======================================
@@ -453,8 +458,8 @@ JNIEXPORT void JNICALL Java_com_example_home_BequestProto_PackageDownloader_Load
 
 
 extern "C" {
-void Java_com_example_home_BequestProto_JNiActivity_GetMatch(JNIEnv *env, jobject thiz, jlong inAddress,
-                                                             jstring fileLocation) {
+void Java_in_ac_iiit_cvit_bequest_JNiActivity_GetMatch(JNIEnv *env, jobject thiz, jlong inAddress,
+                                                       jstring fileLocation) {
 
     /* PRE PROCESSING */
     QWords.clear();
@@ -604,8 +609,8 @@ void Java_com_example_home_BequestProto_JNiActivity_GetMatch(JNIEnv *env, jobjec
 }
 
 extern "C"{
-jstring JNICALL Java_com_example_home_BequestProto_JNiActivity_GeoVerify(JNIEnv *env, jobject instance,
-                                                                         jstring fileLocation){
+jstring JNICALL Java_in_ac_iiit_cvit_bequest_JNiActivity_GeoVerify(JNIEnv *env, jobject instance,
+                                                                   jstring fileLocation){
     /*Goemetrical verification*/
 
     __android_log_write(ANDROID_LOG_VERBOSE,"Progress","Reached GeoVerify");
@@ -773,16 +778,16 @@ jstring JNICALL Java_com_example_home_BequestProto_JNiActivity_GeoVerify(JNIEnv 
 }
 
 extern "C"
-jstring Java_com_example_home_BequestProto_MainActivity_stringFromJNI(JNIEnv *env, jobject /* this */) {
+jstring Java_in_ac_iiit_cvit_bequest_MainActivity_stringFromJNI(JNIEnv *env, jobject /* this */) {
     std::string hello = "Welcome";
     return env->NewStringUTF(hello.c_str());
 }
 
 extern "C"
 {
-void JNICALL Java_com_example_home_BequestProto_CameraActivity_salt(JNIEnv *env, jobject instance,
-                                                                           jlong matAddrGray,
-                                                                           jint nbrElem) {
+void JNICALL Java_in_ac_iiit_cvit_bequest_CameraActivity_salt(JNIEnv *env, jobject instance,
+                                                              jlong matAddrGray,
+                                                              jint nbrElem) {
     Mat &mGr = *(Mat *) matAddrGray;
     for (int k = 0; k < nbrElem; k++) {
         int i = rand() % mGr.cols;
