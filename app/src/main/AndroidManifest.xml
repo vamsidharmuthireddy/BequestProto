@@ -33,12 +33,14 @@
         <activity
             android:name=".CameraActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar"
-            android:screenOrientation="landscape">
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|screenSize">
 
         </activity>
 
         <activity
             android:name="in.ac.iiit.cvit.bequest.AnnotationActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
 
             android:screenOrientation="landscape">
         </activity>

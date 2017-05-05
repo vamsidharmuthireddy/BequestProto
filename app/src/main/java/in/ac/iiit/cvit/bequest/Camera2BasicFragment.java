@@ -60,7 +60,9 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -142,21 +144,32 @@ public class Camera2BasicFragment extends Fragment
 
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture texture, int width, int height) {
+            Log.v(LOGTAG, "onSurfaceTextureAvailable imageDisplayed = " + imageDisplayed);
+
             openCamera(width, height);
+            annotationText.setVisibility(View.INVISIBLE);
+
         }
 
         @Override
         public void onSurfaceTextureSizeChanged(SurfaceTexture texture, int width, int height) {
+            Log.v(LOGTAG, "onSurfaceTextureSizeChanged imageDisplayed = " + imageDisplayed);
             configureTransform(width, height);
         }
 
         @Override
         public boolean onSurfaceTextureDestroyed(SurfaceTexture texture) {
+            Log.v(LOGTAG, "onSurfaceTextureDestroyed imageDisplayed = " + imageDisplayed);
+            if (!imageDisplayed) {
+                return true;
+            }
+//            return false;
             return true;
         }
 
         @Override
         public void onSurfaceTextureUpdated(SurfaceTexture texture) {
+            //Log.v(LOGTAG,"onSurfaceTextureUpdated imageDisplayed = "+imageDisplayed);
         }
 
     };
@@ -173,6 +186,7 @@ public class Camera2BasicFragment extends Fragment
     private ImageButton confirmQueryImage;
     private ImageButton scrapQueryImage;
     private TextView annotationText;
+    private ImageView annotationImage;
 
     /**
      * ID of the current {@link CameraDevice}.
@@ -206,6 +220,7 @@ public class Camera2BasicFragment extends Fragment
 
         @Override
         public void onOpened(@NonNull CameraDevice cameraDevice) {
+            Log.v(LOGTAG, "mStateCallback onOpened  imageDisplayed = " + imageDisplayed);
             // This method is called when the camera is opened.  We start camera preview here.
             mCameraOpenCloseLock.release();
             mCameraDevice = cameraDevice;
@@ -223,6 +238,7 @@ public class Camera2BasicFragment extends Fragment
 
         @Override
         public void onDisconnected(@NonNull CameraDevice cameraDevice) {
+            Log.v(LOGTAG, "mStateCallback onDisconnected  imageDisplayed = " + imageDisplayed);
             mCameraOpenCloseLock.release();
             cameraDevice.close();
             mCameraDevice = null;
@@ -446,13 +462,13 @@ public class Camera2BasicFragment extends Fragment
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        //Log.v(LOGTAG,"onCreateView");
+        Log.v(LOGTAG, "onCreateView");
         return inflater.inflate(R.layout.fragment_camera2_basic, container, false);
     }
 
     @Override
     public void onViewCreated(final View view, Bundle savedInstanceState) {
-        //Log.v(LOGTAG,"onViewCreated");
+        Log.v(LOGTAG, "onViewCreated");
         clickPicture = (ImageButton) view.findViewById(R.id.capture);
         clickPicture.setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
@@ -461,19 +477,19 @@ public class Camera2BasicFragment extends Fragment
         scrapQueryImage = (ImageButton) view.findViewById(R.id.scrap_query_image);
         scrapQueryImage.setOnClickListener(this);
         annotationText = (TextView) view.findViewById(R.id.annotation_text);
+        annotationImage = (ImageView) view.findViewById(R.id.annotation_image);
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        //Log.v(LOGTAG,"onActivityCreated");
+        Log.v(LOGTAG, "onActivityCreated");
         mFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "pic.jpg");
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        startBackgroundThread();
         Log.v(LOGTAG, "OnResume imageDisplayed = " + imageDisplayed);
         // When the screen is turned off and turned back on, the SurfaceTexture is already
         // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
@@ -481,13 +497,17 @@ public class Camera2BasicFragment extends Fragment
         // the SurfaceTextureListener).
         if (mTextureView.isAvailable()) {
             if (!imageDisplayed) {
+                startBackgroundThread();
                 openCamera(mTextureView.getWidth(), mTextureView.getHeight());
                 //clickPicture.setVisibility(View.VISIBLE);
-                //Log.v(LOGTAG,"OnResume Texture view is already available");
+                Log.v(LOGTAG, "OnResume Texture view is already available");
             }
         } else {
-            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
-            //Log.v(LOGTAG,"OnResume Texture view is not available");
+            if (!imageDisplayed) {
+                startBackgroundThread();
+                mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+                Log.v(LOGTAG, "OnResume Texture view is not available");
+            }
         }
 
         getView().setFocusableInTouchMode(true);
@@ -502,10 +522,13 @@ public class Camera2BasicFragment extends Fragment
                         //Log.v(LOGTAG,"OnResume back press imageDisplayed = "+imageDisplayed);
                         imageDisplayed = false;
                         openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                         //clickPicture.setVisibility(View.VISIBLE);
                         confirmQueryImage.setVisibility(View.INVISIBLE);
                         scrapQueryImage.setVisibility(View.INVISIBLE);
                         annotationText.setVisibility(View.INVISIBLE);
+                        annotationImage.setVisibility(View.INVISIBLE);
+
                     } else {
                         getActivity().onBackPressed();
                         //Log.v(LOGTAG,"OnResume back press imageDisplayed = "+imageDisplayed);
@@ -522,9 +545,10 @@ public class Camera2BasicFragment extends Fragment
     @Override
     public void onPause() {
         super.onPause();
+        Log.v(LOGTAG, "onPause");
         if (!imageDisplayed) {
             //Log.v(LOGTAG,"Closing camera. Shot picture is not being displayed. imageDisplayed = "+imageDisplayed);
-            closeCamera();
+            //closeCamera();
             //stopBackgroundThread();
         } else {
             //Log.v(LOGTAG,"Not closing camera. Shot picture is being displayed. imageDisplayed = "+imageDisplayed);
@@ -1009,13 +1033,17 @@ public class Camera2BasicFragment extends Fragment
             case R.id.capture:
                 takePicture();
                 clickPicture.setVisibility(View.INVISIBLE);
-//                confirmQueryImage.setVisibility(View.VISIBLE);
-//                scrapQueryImage.setVisibility(View.VISIBLE);
+                //annotationImage.setVisibility(View.VISIBLE);
+                getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                confirmQueryImage.setVisibility(View.VISIBLE);
+                scrapQueryImage.setVisibility(View.VISIBLE);
                 break;
             case R.id.confirm_query_image:
                 confirmQueryImage.setVisibility(View.INVISIBLE);
                 scrapQueryImage.setVisibility(View.INVISIBLE);
                 closeCamera();
+                getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
                 JNiActivity jNiActivity = new JNiActivity(getActivity(), getActivity());
                 jNiActivity.execute();
                 break;
@@ -1023,6 +1051,7 @@ public class Camera2BasicFragment extends Fragment
                 //Log.v(LOGTAG,"OnResume back press imageDisplayed = "+imageDisplayed);
                 imageDisplayed = false;
                 openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 clickPicture.setVisibility(View.VISIBLE);
                 confirmQueryImage.setVisibility(View.INVISIBLE);
                 scrapQueryImage.setVisibility(View.INVISIBLE);

@@ -470,7 +470,7 @@ void Java_in_ac_iiit_cvit_bequest_JNiActivity_GetMatch(JNIEnv *env, jobject thiz
     GetJStringContent(env,fileLocation,str);
 
     //str = str.append("/temp.jpg").c_str();
-    str = str+"/beq.jpg";
+    str = str + "/pic.jpg";
 
     Mat img_temp = imread(str);
 

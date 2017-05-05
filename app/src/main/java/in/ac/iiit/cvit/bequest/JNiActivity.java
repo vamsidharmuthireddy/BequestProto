@@ -58,7 +58,7 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
     @Override
     protected String doInBackground(Void... params) {
 
-        String path = "beq.jpg";
+        String path = "pic.jpg";
 
         Mat input = new Mat();
         Mat output = new Mat();
@@ -78,10 +78,11 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
             long inad = input.getNativeObjAddr();
             long outad = output.getNativeObjAddr();
 
-            String fileAddress = Environment.getExternalStorageDirectory().getAbsolutePath();
-            GetMatch(inad,fileAddress);
+            String imageFileAddress = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath();
+            GetMatch(inad, imageFileAddress);
             Log.v(LOGTAG,"Done implementing GetMatch, going to call GeoVerify");
-            num = GeoVerify(fileAddress);
+            String treeFileAddress = Environment.getExternalStorageDirectory().getAbsolutePath();
+            num = GeoVerify(treeFileAddress);
 /*
 
             try {
@@ -123,13 +124,16 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
             String[] parts = num.split("_");
             int resId = context.getResources().getIdentifier(parts[0], "string", context.getPackageName());
             Log.v(LOGTAG, "resId = " + resId);
-            textView.setText(context.getString(resId));
-            textView.setVisibility(View.VISIBLE);
-            //textView.setText("inliers = "+parts[2]+"\n"+"r_score = "+parts[3]);
-
+            if (textView != null) {
+                textView.setText(context.getString(resId));
+                textView.setVisibility(View.VISIBLE);
+                //textView.setText("inliers = "+parts[2]+"\n"+"r_score = "+parts[3]);
+            }
         }else{
-            textView.setText("Not able to retrieve information");
-            textView.setVisibility(View.VISIBLE);
+            if (textView != null) {
+                textView.setText("Not able to retrieve information");
+                textView.setVisibility(View.VISIBLE);
+            }
         }
         Intent intent = new Intent(context, AnnotationActivity.class);
         intent.putExtra("result",num);
