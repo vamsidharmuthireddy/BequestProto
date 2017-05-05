@@ -32,7 +32,7 @@ public class AnnotationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_annotation);
 
 
-        File imageFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "beq.jpg");
+        File imageFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "pic.jpg");
         Uri imageUri = Uri.fromFile(imageFile);
         int orientation = 0, rotation = 0;
 
