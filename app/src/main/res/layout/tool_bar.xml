@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:elevation="@dimen/activity_elevation"
-    android:id="@+id/toolbar_card">
+    android:id="@+id/toolbar_card"
+    android:fitsSystemWindows="true">
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
@@ -28,15 +29,6 @@
                 android:layout_height="wrap_content"
                 android:background="@color/trans_background">
 
-                <ImageButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/openCamera"
-                    android:gravity="center"
-                    android:src="@mipmap/ic_camera_launch"
-                    android:layout_alignParentEnd="true"
-                    android:background="@color/colorWhite"
-                    android:layout_marginEnd="@dimen/activity_half_std_margin" />
 
             </RelativeLayout>
         </android.support.v7.widget.Toolbar>

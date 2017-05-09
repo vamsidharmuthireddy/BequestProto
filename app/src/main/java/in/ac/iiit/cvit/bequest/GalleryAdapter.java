@@ -3,10 +3,14 @@ package in.ac.iiit.cvit.bequest;
 
 import android.animation.ObjectAnimator;
 import android.app.Activity;
+import android.content.ClipData;
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -85,8 +89,8 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.DataObje
         Uri uri = Uri.fromFile(file);
         viewHolder.galleryImage.setLayoutParams(new GridView.LayoutParams(imageWidth, imageWidth));
         viewHolder.galleryImage.setBackgroundColor(context.getResources().getColor(R.color.colorBlack));
-        Log.v(LOGTAG, "file name " + file.getAbsolutePath());
-        Log.v(LOGTAG, "uri " + uri.toString());
+        //Log.v(LOGTAG, "file name " + file.getAbsolutePath());
+        //Log.v(LOGTAG, "uri " + uri.toString());
         Glide.with(context)
                 .load(file)
                 .asBitmap()
@@ -112,21 +116,59 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.DataObje
         viewHolder.galleryImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                /*Intent openFullScreenImage = new Intent(activity, FullScreenImageActivity.class);
-                openFullScreenImage.putExtra("position", _position);
-                openFullScreenImage.putStringArrayListExtra(context.getString(R.string.imageNamesList), ImageNamesList);
-                Log.v(LOGTAG, "clicked image is " + ff.get(_position));
+                Log.v(LOGTAG, "onClick");
 
-                //activity.startActivity(openFullScreenImage);
-
-                int startX = v.getWidth() / 2;
-                int startY = v.getHeight() / 2;
-                Bitmap clickedImage = BitmapFactory.decodeFile(ff.get(position));
-                ActivityOptions options = ActivityOptions.makeThumbnailScaleUpAnimation(v, clickedImage, startX, startY);
-                activity.startActivity(openFullScreenImage, options.toBundle());
-*/
             }
         });
+
+
+        viewHolder.galleryImage.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                Log.v(LOGTAG, "onLongClick");
+                ClipData data = ClipData.newPlainText("", "");
+                View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    v.startDragAndDrop(data, shadowBuilder, v, 0);
+                } else {
+                    v.startDrag(data, shadowBuilder, v, 0);
+                }
+
+                return true;
+            }
+        });
+
+
+        viewHolder.galleryImage.setOnDragListener(new View.OnDragListener() {
+            Drawable enterShape = activity.getResources().getDrawable(R.drawable.monument);
+            Drawable historyDrawer;
+
+            @Override
+            public boolean onDrag(View v, DragEvent event) {
+                switch (event.getAction()) {
+                    case DragEvent.ACTION_DRAG_STARTED:
+                        Log.v(LOGTAG, "ACTION_DRAG_STARTED");
+                        break;
+                    case DragEvent.ACTION_DRAG_ENTERED:
+                        historyDrawer = v.getBackground();
+                        v.setBackground(enterShape);
+                        Log.v(LOGTAG, "ACTION_DRAG_ENTERED");
+                        break;
+                    case DragEvent.ACTION_DRAG_EXITED:
+                        Log.v(LOGTAG, "ACTION_DRAG_EXITED");
+                        v.setBackground(historyDrawer);
+                        break;
+                    case DragEvent.ACTION_DROP:
+                        Log.v(LOGTAG, "ACTION_DROP");
+                        break;
+                    case DragEvent.ACTION_DRAG_ENDED:
+                        Log.v(LOGTAG, "ACTION_DRAG_ENDED");
+                        break;
+                }
+                return false;
+            }
+        });
+
 
     }
 

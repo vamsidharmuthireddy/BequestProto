@@ -152,7 +152,8 @@ public class DragNDrop extends Fragment {
                 }
             }
 
-            Log.v(LOGTAG, "top = " + outRect.top + " right = " + outRect.right + " bottom = " + outRect.bottom + " left = " + outRect.left);
+            Log.v(LOGTAG, "top = " + outRect.top + " right = " + outRect.right + " bottom = " + outRect.bottom
+                    + " left = " + outRect.left + " spanCount = " + spanCount + " spacing = " + spacing);
 
         }
     }

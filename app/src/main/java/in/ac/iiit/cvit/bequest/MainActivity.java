@@ -19,9 +19,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.WindowManager;
-import android.widget.ImageButton;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
@@ -35,8 +35,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 4;
     private static final int Click = 5;
     private static final int PERMISSIONS_REQUEST_CAMERA = 6;
-
-
+    public static Menu menu;
+    public static MenuItem menuItem;
     private int totalPermissions = 0;
     private boolean storageRequested = false;
     private boolean cameraRequested = false;
@@ -92,6 +92,42 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu mMenu) {
+        menu = mMenu;
+        menuItem = menu.findItem(R.id.openCamera);
+//        menuItem.setVisible(false);
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.openCamera) {
+//All the permissions are set. Call camera on button click
+                /*Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);//Making an intent
+                Uri imageUri = Uri.fromFile(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),"beq.jpg"));
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+                takePictureIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY |
+                        Intent.FLAG_ACTIVITY_NEW_DOCUMENT |
+                        Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+                if(takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                    startActivityForResult(takePictureIntent,Click);//Calling camera
+                }*/
+
+            Intent takePicture = new Intent(MainActivity.this, CameraActivity.class);
+            startActivity(takePicture);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 
     private void checkAllPermissions() {
         //Setting Camera permissions
@@ -142,9 +178,12 @@ public class MainActivity extends AppCompatActivity {
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
             //Toast.makeText(this, getString(R.string.storage_permission_request), Toast.LENGTH_LONG).show();
             Toast.makeText(this, "Write External Storage permission allows us to do store images. Please allow this permission in App Settings.", Toast.LENGTH_LONG).show();
-            ImageButton button = (ImageButton) toolbarCard.findViewById(R.id.openCamera);
+            /*ImageButton button = (ImageButton) toolbarCard.findViewById(R.id.openCamera);
             button.setVisibility(View.INVISIBLE);
-            button.setEnabled(false);
+            button.setEnabled(false);*/
+            if (menuItem != null) {
+                menuItem.setVisible(false);
+            }
             ActivityCompat.requestPermissions(MainActivity.this,
                     new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
 
@@ -152,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
 
         } else {
             Log.v(LOGTAG, "requestStoragePermission else");
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 ActivityCompat.requestPermissions(MainActivity.this,
                         new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
             }
@@ -205,13 +244,14 @@ public class MainActivity extends AppCompatActivity {
 
         launchPreferenceManager = new LaunchPreferenceManager(MainActivity.this);
         Log.v(LOGTAG,  "isDownloaded = "+launchPreferenceManager.isDownloaded());
-        final ImageButton button = (ImageButton) toolbarCard.findViewById(R.id.openCamera);
+
+        /*final ImageButton button = (ImageButton) toolbarCard.findViewById(R.id.openCamera);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
                 //All the permissions are set. Call camera on button click
-                /*Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);//Making an intent
+                *//*Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);//Making an intent
                 Uri imageUri = Uri.fromFile(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),"beq.jpg"));
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
                 takePictureIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY |
@@ -219,7 +259,7 @@ public class MainActivity extends AppCompatActivity {
                         Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
                 if(takePictureIntent.resolveActivity(getPackageManager()) != null) {
                     startActivityForResult(takePictureIntent,Click);//Calling camera
-                }*/
+                }*//*
 
                 Intent takePicture = new Intent(MainActivity.this, CameraActivity.class);
                 startActivity(takePicture);
@@ -227,12 +267,21 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+*/
+
+        if (menu != null) {
+            MenuItem openCamera = menu.findItem(R.id.openCamera);
+        }
+
 
         try {
 
             if (!launchPreferenceManager.isDownloaded()) {
-                button.setVisibility(View.INVISIBLE);
-                button.setEnabled(false);
+                /*button.setVisibility(View.INVISIBLE);
+                button.setEnabled(false);*/
+                if (menuItem != null) {
+                    menuItem.setVisible(false);
+                }
                 //From second time whenever this app is opened, this activity is shown
                 new AlertDialog.Builder(MainActivity.this)
                         .setMessage("Do you want to download ?")
@@ -264,8 +313,11 @@ public class MainActivity extends AppCompatActivity {
         try {
 
             if (launchPreferenceManager.isDownloaded()) {
-                button.setVisibility(View.VISIBLE);
-                button.setEnabled(true);
+                /*button.setVisibility(View.VISIBLE);
+                button.setEnabled(true);*/
+                if (menuItem != null) {
+                    menuItem.setVisible(true);
+                }
             }
         } catch (Exception e) {
             Log.e(LOGTAG, e.toString());
@@ -394,10 +446,13 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             progressDialog.dismiss();
-            final ImageButton button = (ImageButton) toolbarCard.findViewById(R.id.openCamera);
+/*            final ImageButton button = (ImageButton) toolbarCard.findViewById(R.id.openCamera);
             button.setVisibility(View.VISIBLE);
-            button.setEnabled(true);
+            button.setEnabled(true);*/
 
+            if (menuItem != null) {
+                menuItem.setVisible(true);
+            }
 
         }
     }
