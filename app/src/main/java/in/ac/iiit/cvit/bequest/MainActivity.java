@@ -6,6 +6,7 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -15,9 +16,12 @@ import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.CardView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
+import android.view.WindowManager;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
@@ -37,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
     private boolean storageRequested = false;
     private boolean cameraRequested = false;
 
+    private Toolbar toolbar;
+    private CardView toolbarCard;
     // Used to load the 'native-lib' library on application startup.
     static {
         try {
@@ -51,7 +57,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
         setContentView(R.layout.activity_main);
+
+        toolbarCard = (CardView) findViewById(R.id.toolbar_card);
+
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setBackgroundColor(Color.WHITE);
+        setSupportActionBar(toolbar);
 
         checkAllPermissions();
 
@@ -126,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
             //Toast.makeText(this, getString(R.string.storage_permission_request), Toast.LENGTH_LONG).show();
             Toast.makeText(this, "Write External Storage permission allows us to do store images. Please allow this permission in App Settings.", Toast.LENGTH_LONG).show();
-            Button button = (Button) findViewById(R.id.openCamera);
+            ImageButton button = (ImageButton) toolbarCard.findViewById(R.id.openCamera);
             button.setVisibility(View.INVISIBLE);
             button.setEnabled(false);
             ActivityCompat.requestPermissions(MainActivity.this,
@@ -189,7 +205,7 @@ public class MainActivity extends AppCompatActivity {
 
         launchPreferenceManager = new LaunchPreferenceManager(MainActivity.this);
         Log.v(LOGTAG,  "isDownloaded = "+launchPreferenceManager.isDownloaded());
-        final Button button = (Button) findViewById(R.id.openCamera);
+        final ImageButton button = (ImageButton) toolbarCard.findViewById(R.id.openCamera);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -237,6 +253,10 @@ public class MainActivity extends AppCompatActivity {
 
             } else {
                 new Loader().execute();
+
+                getFragmentManager().beginTransaction()
+                        .replace(R.id.main_container, DragNDrop.newInstance())
+                        .commit();
             }
         } catch (Exception e) {
             Log.e(LOGTAG, e.toString());
@@ -374,9 +394,10 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             progressDialog.dismiss();
-            final Button button = (Button) findViewById(R.id.openCamera);
+            final ImageButton button = (ImageButton) toolbarCard.findViewById(R.id.openCamera);
             button.setVisibility(View.VISIBLE);
             button.setEnabled(true);
+
 
         }
     }

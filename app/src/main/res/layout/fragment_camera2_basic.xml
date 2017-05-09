@@ -35,9 +35,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_margin="@dimen/activity_horizontal_margin"
-        android:background="@color/trans_background"
+        android:background="@color/translucent_background"
         android:textColor="@android:color/white"
-        android:visibility="invisible" />
+        android:visibility="invisible"
+        android:padding="@dimen/activity_horizontal_margin" />
 
     <LinearLayout
         android:id="@+id/control"

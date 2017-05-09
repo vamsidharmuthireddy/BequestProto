@@ -5,5 +5,29 @@
     <color name="colorAccent">#FF4081</color>
 
 
-    <color name="trans_background">#d2000000</color>
+    <color name="trans_background">#00000000</color>
+
+    <color name="colorWhite">#ffffff</color>
+    <color name="colorBlack">#000000</color>
+    <color name="colorGray">#7d7d7d</color>
+
+    <color name="colorRed">#f64c73</color>
+    <color name="colorGreen">#20D2BB</color>
+    <color name="colorBlue">#3395FF</color>
+    <color name="mediumGray">#bbbbbb</color>
+
+    <!--
+    <color name="translucent_scrim_top">#26000000</color>
+    <color name="translucent_scrim_top_center">#0C000000</color>
+    <color name="translucent_scrim_bottom">#2A000000</color>
+    <color name="translucent_scrim_bottom_center">#0D000000</color>
+-->
+
+    <color name="translucent_scrim_top">#64000000</color>
+    <color name="translucent_scrim_top_center">#32000000</color>
+    <color name="translucent_scrim_bottom">#4B000000</color>
+    <color name="translucent_scrim_bottom_center">#25000000</color>
+
+    <color name="translucent_background">#96000000</color>
+
 </resources>

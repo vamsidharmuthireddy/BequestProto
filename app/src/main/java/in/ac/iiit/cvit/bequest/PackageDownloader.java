@@ -7,9 +7,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Environment;
+import android.support.v7.widget.CardView;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -189,7 +191,9 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
             alertDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                 // do something when the button is clicked
                 public void onClick(DialogInterface arg0, int arg1) {
-                    Button button = (Button)_activity.findViewById(R.id.openCamera);
+                    CardView toolbarCard = (CardView) _activity.findViewById(R.id.toolbar_card);
+                    ImageButton button = (ImageButton) toolbarCard.findViewById(R.id.openCamera);
+//                    Button button = (Button)_activity.findViewById(R.id.openCamera);
                     button.setEnabled(true);
                     button.setVisibility(View.VISIBLE);
                     LaunchPreferenceManager launchPreferenceManager = new LaunchPreferenceManager(_context);
@@ -199,7 +203,8 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
 
             alertDialog.setMessage("Download Complete");
             alertDialog.show();
-            Button button = (Button)_activity.findViewById(R.id.openCamera);
+            CardView toolbarCard = (CardView) _activity.findViewById(R.id.toolbar_card);
+            ImageButton button = (ImageButton) toolbarCard.findViewById(R.id.openCamera);
             button.setEnabled(true);
             button.setVisibility(View.VISIBLE);
             LaunchPreferenceManager launchPreferenceManager = new LaunchPreferenceManager(_context);
