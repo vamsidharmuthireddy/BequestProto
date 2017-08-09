@@ -24,6 +24,8 @@ import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import java.io.File;
+
 public class MainActivity extends AppCompatActivity {
 
     LaunchPreferenceManager launchPreferenceManager;
@@ -245,6 +247,20 @@ public class MainActivity extends AppCompatActivity {
         launchPreferenceManager = new LaunchPreferenceManager(MainActivity.this);
         Log.v(LOGTAG,  "isDownloaded = "+launchPreferenceManager.isDownloaded());
 
+        boolean package_download_state = false;
+//        File baseLocal = context.getFilesDir();
+        //File baseLocal = context.getDir("Heritage",Context.MODE_PRIVATE);
+//        File extracted = new File(baseLocal, EXTRACT_DIR + packageName_en);
+        File extracted = new File(Environment.getExternalStorageDirectory().getAbsolutePath(),
+                getString(R.string.basepackagename));
+        if (extracted.exists()) {
+            package_download_state = true;
+            Log.v(LOGTAG, getString(R.string.basepackagename) + " already exists");
+        } else {
+            package_download_state = false;
+            Log.v(LOGTAG, getString(R.string.basepackagename) + " does not exists");
+        }
+
         /*final ImageButton button = (ImageButton) toolbarCard.findViewById(R.id.openCamera);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -276,7 +292,8 @@ public class MainActivity extends AppCompatActivity {
 
         try {
 
-            if (!launchPreferenceManager.isDownloaded()) {
+//            if (!launchPreferenceManager.isDownloaded()) {
+            if (!package_download_state) {
                 /*button.setVisibility(View.INVISIBLE);
                 button.setEnabled(false);*/
                 if (menuItem != null) {
@@ -312,7 +329,8 @@ public class MainActivity extends AppCompatActivity {
         }
         try {
 
-            if (launchPreferenceManager.isDownloaded()) {
+//            if (launchPreferenceManager.isDownloaded()) {
+            if (package_download_state) {
                 /*button.setVisibility(View.VISIBLE);
                 button.setEnabled(true);*/
                 if (menuItem != null) {

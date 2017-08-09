@@ -59,8 +59,8 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
         EXTRACT_DIR = "";
         COMPRESSED_DIR = "";
         //packageUrl =  "https://spyd123.pythonanywhere.com/welcome/static/sample.tar";
-        //packageUrl =  "http://preon.iiit.ac.in/~heritage/packages/";
-        packageUrl =  "https://spyd123.pythonanywhere.com/welcome/static/BequestProto2.tar.gz";
+        packageUrl = "http://preon.iiit.ac.in/~heritage/packages/bequestPackages/BequestProto2.tar.gz";
+//        packageUrl =  "https://spyd123.pythonanywhere.com/welcome/static/BequestProto2.tar.gz";
         packageFormat = ".tar.gz";
     }
 
@@ -298,6 +298,8 @@ public class PackageDownloader extends AsyncTask<String, String, String> {
 
     }
 
+
+    public native void LoadData(String filelocation);
 
     public native void LoadMyData(String filelocation);
 

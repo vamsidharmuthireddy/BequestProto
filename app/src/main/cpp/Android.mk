@@ -1,5 +1,5 @@
 LOCAL_PATH  := $(call my-dir)
-OPENCV_PATH := C:/OpenCV-android-sdk/sdk/native/jni
+OPENCV_PATH := /home/vamsidhar/OpenCV-android-sdk/sdk/native/jni
 
 include $(CLEAR_VARS)
 OPENCV_INSTALL_MODULES := on

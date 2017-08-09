@@ -79,10 +79,18 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
             long outad = output.getNativeObjAddr();
 
             String imageFileAddress = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath();
-            GetMatch(inad, imageFileAddress);
-            Log.v(LOGTAG,"Done implementing GetMatch, going to call GeoVerify");
-            String treeFileAddress = Environment.getExternalStorageDirectory().getAbsolutePath();
-            num = GeoVerify(treeFileAddress);
+            double blurValue = detectBlur(inad, imageFileAddress);
+            Log.v(LOGTAG, "Blur value = " + blurValue);
+
+            if (blurValue > 20) {
+                GetMatch(inad, imageFileAddress);
+                Log.v(LOGTAG, "Done implementing GetMatch, going to call GeoVerify");
+                String treeFileAddress = Environment.getExternalStorageDirectory().getAbsolutePath();
+                num = GeoVerify(treeFileAddress);
+            } else {
+//                num= context.getString(R.string.blurmessage)+"_0";
+                num = "blurmessage_0_0_0";
+            }
 /*
 
             try {
@@ -121,15 +129,21 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
         progressDialog.dismiss();
         TextView textView = (TextView) activity.findViewById(R.id.annotation_text);
         if(num != null && !num.equals("") ) {
+            Log.v(LOGTAG, "Retrieved image = " + num);
             String[] parts = num.split("_");
             int resId = context.getResources().getIdentifier(parts[0], "string", context.getPackageName());
-            Log.v(LOGTAG, "resId = " + resId);
+            double total_score = Double.parseDouble(parts[2]) * Double.parseDouble(parts[3]);
+            Log.v(LOGTAG, "resId = " + resId + " total_score = " + total_score);
             if (textView != null) {
-                textView.setText(context.getString(resId));
+                if (total_score < 1.83) {
+                    textView.setText("No information available");
+                } else {
+                    textView.setText(context.getString(resId));
+                }
                 textView.setVisibility(View.VISIBLE);
                 //textView.setText("inliers = "+parts[2]+"\n"+"r_score = "+parts[3]);
             }
-        }else{
+        } else {
             if (textView != null) {
                 textView.setText("Not able to retrieve information");
                 textView.setVisibility(View.VISIBLE);
@@ -144,6 +158,7 @@ public class JNiActivity extends AsyncTask<Void,Void,String> {
 
 //    public native String trial(long in, long out, String file);
 
+    public native double detectBlur(long in, String file);
     public native void GetMatch(long in, String file);
     public native String GeoVerify(String fileAddress);
 

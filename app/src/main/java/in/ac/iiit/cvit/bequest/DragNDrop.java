@@ -1,6 +1,7 @@
 package in.ac.iiit.cvit.bequest;
 
 import android.app.Fragment;
+import android.content.ClipData;
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -13,11 +14,15 @@ import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Display;
+import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ImageView;
+import android.widget.Toast;
 
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -28,7 +33,7 @@ import java.util.ArrayList;
 public class DragNDrop extends Fragment {
 
 
-    public static int NUM_OF_COLUMNS = 3;
+    public static int NUM_OF_COLUMNS = 6;
 
     // Gridview image padding
     public static int GRID_PADDING = 2; // in dp
@@ -70,30 +75,99 @@ public class DragNDrop extends Fragment {
 
 //columnWidth in pixels
         //since we are not using entire screen, recalculate the width
-        columnWidth = (int) ((2 * getScreenWidth() / 3 - ((NUM_OF_COLUMNS + 1) * GRID_PADDING)) / NUM_OF_COLUMNS);
+        columnWidth = (int) ((getScreenWidth() - ((NUM_OF_COLUMNS + 1) * GRID_PADDING)) / NUM_OF_COLUMNS);
 
-        RecyclerView gridView = (RecyclerView) getActivity().findViewById(R.id.recyclerview_gallery);
-        gridView.setHasFixedSize(true);
+        RecyclerView dragNdropGridView = (RecyclerView) getActivity().findViewById(R.id.recyclerview_gallery);
+        dragNdropGridView.setHasFixedSize(true);
         //RecyclerView.LayoutManager layoutManager = new GridLayoutManager(getApplicationContext(),NUM_OF_COLUMNS);
-        RecyclerView.LayoutManager layoutManager = new PreLoadingGridLayoutManager(getActivity().getApplicationContext(), NUM_OF_COLUMNS);
+        RecyclerView.LayoutManager layoutManager =
+                new PreLoadingGridLayoutManager(getActivity().getApplicationContext(), NUM_OF_COLUMNS);
         layoutManager.setItemPrefetchEnabled(true);
         new PreLoadingGridLayoutManager(getActivity().getApplicationContext(), NUM_OF_COLUMNS).setPages(5);
         layoutManager.setMeasurementCacheEnabled(true);
-        gridView.setLayoutManager(layoutManager);
-        gridView.isDrawingCacheEnabled();
-        gridView.addItemDecoration(new MarginDecoration(getActivity(), NUM_OF_COLUMNS, GRID_PADDING, true));
-        gridView.setHasFixedSize(true);
-        gridView.setVerticalScrollBarEnabled(true);
-        gridView.setBackgroundColor(getResources().getColor(R.color.colorAccent));
+        dragNdropGridView.setLayoutManager(layoutManager);
+        dragNdropGridView.isDrawingCacheEnabled();
+        dragNdropGridView.addItemDecoration(new MarginDecoration(getActivity(), NUM_OF_COLUMNS, GRID_PADDING, true));
+        dragNdropGridView.setHasFixedSize(true);
+        dragNdropGridView.setVerticalScrollBarEnabled(true);
+        dragNdropGridView.setBackgroundColor(getResources().getColor(R.color.colorWhite));
 
         ArrayList<String> ImageNamesList = new ArrayList<String>();
+//
+//        for (int i = 0; i < 20; i++) {
+//            ImageNamesList.add(Environment.getExternalStorageDirectory().getAbsolutePath() + "/pic.jpg");
+//        }
+//
 
-        for (int i = 0; i < 20; i++) {
-            ImageNamesList.add(Environment.getExternalStorageDirectory().getAbsolutePath() + "/pic.jpg");
+        String dragNdropFolderPath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator
+                + getString(R.string.basepackagename) + File.separator + getString(R.string.dragNdropfolder);
+
+        File dragNdropFolder = new File(dragNdropFolderPath);
+
+        File imageFiles[] = dragNdropFolder.listFiles();
+        File newImageFiles[] = new File[2 * imageFiles.length];
+
+        int last_image_position = ((imageFiles.length / 4) * 6) + imageFiles.length % 4 - 1;
+        int last_adapter_position = ((imageFiles.length / 4) * 6) + (6 - 1);
+        int numImages = 0;
+        String imageName;
+        int adapter_position = 0;
+        while (adapter_position < last_adapter_position) {
+            if (adapter_position % 6 == 5 || adapter_position % 6 == 4 || adapter_position > last_image_position) {
+                newImageFiles[adapter_position] = new File(Environment.getExternalStorageDirectory().getAbsolutePath());
+                ImageNamesList.add("");
+
+                Log.v(LOGTAG, imageFiles.length + " " + adapter_position + " " + last_image_position + " " + last_adapter_position + " " + newImageFiles[adapter_position].getAbsolutePath());
+                adapter_position = adapter_position + 1;
+            } else {
+                newImageFiles[adapter_position] = imageFiles[numImages];
+                ImageNamesList.add(imageFiles[numImages].getAbsolutePath());
+
+                Log.v(LOGTAG, imageFiles.length + " " + adapter_position + " " + last_image_position + " " + last_adapter_position + " " + newImageFiles[adapter_position].getAbsolutePath());
+                numImages = numImages + 1;
+                adapter_position = adapter_position + 1;
+
+            }
+
         }
 
-        GalleryAdapter galleryAdapter = new GalleryAdapter(getActivity(), getActivity(), ImageNamesList, columnWidth);
-        gridView.setAdapter(galleryAdapter);
+//
+//        for (int i=0; i<newImageFiles.length; i++){
+//            ImageNamesList.add(newImageFiles[i].getAbsolutePath());
+//        }
+
+        DragNDropGalleryAdapter dragNDropGalleryAdapter = new DragNDropGalleryAdapter(getActivity(), getActivity(), ImageNamesList, last_image_position, columnWidth);
+        dragNdropGridView.setAdapter(dragNDropGalleryAdapter);
+
+
+        ImageView dropArea = (ImageView) getActivity().findViewById(R.id.query_drop_area);
+        dropArea.setOnDragListener(new View.OnDragListener() {
+            @Override
+            public boolean onDrag(View v, DragEvent event) {
+                final int action = event.getAction();
+
+                // Handles each of the expected events
+                switch (action) {
+                    case DragEvent.ACTION_DROP:
+
+                        ClipData.Item item = event.getClipData().getItemAt(0);
+
+                        // Gets the text data from the item.
+                        String dragData = item.getText().toString();
+
+                        if (dragData.equals("Holla!")) {
+                            Toast.makeText(getActivity(), "Dragged data is " + dragData, Toast.LENGTH_LONG).show();
+                            Log.v(LOGTAG, "ACTION_DROP in TextView");
+
+                            return true;
+                        }
+
+
+                }
+                return false;
+            }
+        });
+
 
     }
 
@@ -136,6 +210,7 @@ public class DragNDrop extends Fragment {
             int column = position % spanCount; // item column
 
             //all the values here are pixels
+
             if (includeEdge) {
                 outRect.left = spacing - column * spacing / spanCount; // spacing - column * ((1f / spanCount) * spacing)
                 outRect.right = (column + 1) * spacing / spanCount; // (column + 1) * ((1f / spanCount) * spacing)
@@ -152,7 +227,8 @@ public class DragNDrop extends Fragment {
                 }
             }
 
-            Log.v(LOGTAG, "top = " + outRect.top + " right = " + outRect.right + " bottom = " + outRect.bottom
+
+            Log.v(LOGTAG, "position= " + position + " top = " + outRect.top + " right = " + outRect.right + " bottom = " + outRect.bottom
                     + " left = " + outRect.left + " spanCount = " + spanCount + " spacing = " + spacing);
 
         }
