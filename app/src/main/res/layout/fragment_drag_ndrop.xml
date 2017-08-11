@@ -45,15 +45,24 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="2">
+            <!--
+                        <ImageView
+                            android:id="@+id/query_drop_area"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/monument"
+                            android:layout_centerInParent="true"
+                            android:gravity="center"
+                            android:background="@color/trans_background" />-->
 
-            <ImageView
-                android:id="@+id/query_drop_area"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/monument"
-                android:layout_centerInParent="true"
-                android:gravity="center"
-                android:background="@color/trans_background" />
+
+            <include
+                layout="@layout/card_interest_point"
+                android:id="@+id/card_interest_point"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+
         </RelativeLayout>
 
     </LinearLayout>

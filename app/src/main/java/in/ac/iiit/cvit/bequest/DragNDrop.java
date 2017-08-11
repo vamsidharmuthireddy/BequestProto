@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.Nullable;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.OrientationHelper;
 import android.support.v7.widget.RecyclerView;
@@ -19,7 +20,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import java.io.File;
@@ -76,6 +80,20 @@ public class DragNDrop extends Fragment {
 //columnWidth in pixels
         //since we are not using entire screen, recalculate the width
         columnWidth = (int) ((getScreenWidth() - ((NUM_OF_COLUMNS + 1) * GRID_PADDING)) / NUM_OF_COLUMNS);
+
+        ImageView questionMarkImage = (ImageView) getActivity().findViewById(R.id.question_mark);
+//        questionMarkImage.getLayoutParams().width = columnWidth;
+        questionMarkImage.getLayoutParams().height = columnWidth;
+
+        Animation anim = new MyAnimation(questionMarkImage, 100);
+        anim.setDuration(5000);
+        anim.setRepeatCount(Animation.INFINITE);
+//        anim.setRepeatMode(Animation.INFINITE);
+        anim.setInterpolator(new LinearInterpolator());
+        anim.setStartTime(0);
+        questionMarkImage.startAnimation(anim);
+
+
 
         RecyclerView dragNdropGridView = (RecyclerView) getActivity().findViewById(R.id.recyclerview_gallery);
         dragNdropGridView.setHasFixedSize(true);
@@ -139,8 +157,9 @@ public class DragNDrop extends Fragment {
         DragNDropGalleryAdapter dragNDropGalleryAdapter = new DragNDropGalleryAdapter(getActivity(), getActivity(), ImageNamesList, last_image_position, columnWidth);
         dragNdropGridView.setAdapter(dragNDropGalleryAdapter);
 
-
-        ImageView dropArea = (ImageView) getActivity().findViewById(R.id.query_drop_area);
+        CardView cardView = (CardView) getActivity().findViewById(R.id.card_interest_point);
+        ImageView dropArea = (ImageView) cardView.findViewById(R.id.query_drop_area);
+//        ImageView dropArea = (ImageView) getActivity().findViewById(R.id.query_drop_area);
         dropArea.setOnDragListener(new View.OnDragListener() {
             @Override
             public boolean onDrag(View v, DragEvent event) {

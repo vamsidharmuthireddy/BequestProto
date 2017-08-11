@@ -8,14 +8,19 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
@@ -133,6 +138,23 @@ public class DragNDropGalleryAdapter extends RecyclerView.Adapter<DragNDropGalle
                 @Override
                 public boolean onLongClick(View v) {
                     Log.v(LOGTAG, "onLongClick");
+
+                    ImageView questionMarkImage = (ImageView) activity.findViewById(R.id.question_mark);
+                    Animation anim = questionMarkImage.getAnimation();
+                    Log.v(LOGTAG, anim + "");
+                    if (anim == null) {
+                        anim = new MyAnimation(questionMarkImage, 100);
+                        anim.setDuration(5000);
+                        anim.setRepeatCount(Animation.INFINITE);
+                        anim.setInterpolator(new LinearInterpolator());
+                        anim.setStartTime(0);
+                        questionMarkImage.startAnimation(anim);
+                        questionMarkImage.setVisibility(View.VISIBLE);
+                    }
+
+                    CoordinatorLayout dropAreaContainer = (CoordinatorLayout) activity.findViewById(R.id.drop_area_container);
+                    dropAreaContainer.setVisibility(View.INVISIBLE);
+
                     ClipData data = ClipData.newPlainText("Dragdata", ImageNamesList.get(_position) + "__" + _position);
                     View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -155,7 +177,7 @@ public class DragNDropGalleryAdapter extends RecyclerView.Adapter<DragNDropGalle
             public boolean onDrag(View v, DragEvent event) {
                 switch (event.getAction()) {
                     case DragEvent.ACTION_DRAG_STARTED:
-                        //Log.v(LOGTAG, "ACTION_DRAG_STARTED");
+                        Log.v(LOGTAG, "ACTION_DRAG_STARTED");
 
                         break;
                     case DragEvent.ACTION_DRAG_ENTERED:
@@ -171,6 +193,7 @@ public class DragNDropGalleryAdapter extends RecyclerView.Adapter<DragNDropGalle
                         break;
                     case DragEvent.ACTION_DROP:
                         // Gets the item containing the dragged data
+
                         ClipData.Item item = event.getClipData().getItemAt(0);
 
                         // Gets the text data from the item.
@@ -184,31 +207,40 @@ public class DragNDropGalleryAdapter extends RecyclerView.Adapter<DragNDropGalle
                         Log.v(LOGTAG, "ACTION_DROP " + dragPosition + " to " + _position + " " + selected_image_address);
                         if (position % 6 == 5 || position % 6 == 4) {
 
-//                                Log.v(LOGTAG,"drop tag: "+viewHolder.itemView.findViewWithTag(dragPosition).getTag(dragPosition));
-//                                ImageView queryImageView = (ImageView)viewHolder.itemView.findViewWithTag(dragPosition);
-//                                if(queryImageView==null){
-//                                    Log.v(LOGTAG,"NULL");
-//                                }else{
-//                                    Log.v(LOGTAG,"Not Null");
-//                                }
-////                                BitmapDrawable bitmapDrawable = (BitmapDrawable) queryImageView.getDrawable();
-////                                Bitmap bitmap = bitmapDrawable .getBitmap();
-//
-                            ImageView resultImageView = (ImageView) activity.findViewById(R.id.query_drop_area);
-                            File file = new File(selected_image_address);
+                            ImageView questionMarkImage = (ImageView) activity.findViewById(R.id.question_mark);
+                            questionMarkImage.clearAnimation();
+                            questionMarkImage.setVisibility(View.INVISIBLE);
+                            questionMarkImage.invalidate();
 
-//                                resultImageView.setImageBitmap(bitmap);
-//                                resultImageView.setImageDrawable(activity.getDrawable(R.drawable.golden_eagle));
+
+                            String imageName = selected_image_address.substring(
+                                    selected_image_address.lastIndexOf(File.separator) + 1,
+                                    selected_image_address.lastIndexOf("."));
+                            Log.v(LOGTAG, imageName);
+                            int resIdInterestPoint = context.getResources().getIdentifier(imageName, "string", context.getPackageName());
+
+                            CardView interestPointCard = (CardView) activity.findViewById(R.id.card_interest_point);
+                            ImageView resultImageView = (ImageView) interestPointCard.findViewById(R.id.query_drop_area);
+                            TextView resultTextView = (TextView) interestPointCard.findViewById(R.id.cardview_text);
+                            resultTextView.setText(context.getString(resIdInterestPoint));
+
+//                            ImageView resultImageView = (ImageView) activity.findViewById(R.id.query_drop_area);
+                            File file = new File(selected_image_address);
 
                             Glide.with(context)
                                     .load(file)
                                     .asBitmap()
-//                .placeholder(R.drawable.monument)
                                     .centerCrop()
-//                .crossFade(300)
                                     .diskCacheStrategy(DiskCacheStrategy.RESULT)
                                     .into(resultImageView);
                             resultImageView.invalidate();
+
+                            resultImageView.setVisibility(View.VISIBLE);
+
+                            CoordinatorLayout dropAreaContainer = (CoordinatorLayout) activity.findViewById(R.id.drop_area_container);
+                            dropAreaContainer.setVisibility(View.VISIBLE);
+
+
                         } else {
 
                         }

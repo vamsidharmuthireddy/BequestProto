@@ -28,6 +28,7 @@ android {
         main {
             jniLibs.srcDirs = ['src/main/jniLibs']
             jni.srcDirs = ['src/main/jni', 'src/main/jni/']
+            res.srcDirs = ['src/main/res', 'src/main/res/anim']
         }
     }
     buildTypes {
