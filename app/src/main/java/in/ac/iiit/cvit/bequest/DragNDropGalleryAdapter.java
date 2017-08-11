@@ -1,6 +1,7 @@
 package in.ac.iiit.cvit.bequest;
 
 
+import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.ClipData;
@@ -43,18 +44,197 @@ public class DragNDropGalleryAdapter extends RecyclerView.Adapter<DragNDropGalle
     private int last_image_position;
     private int imageWidth;
 
+
     private ImageView galleryImage;
 
     private static final String LOGTAG = "DragNDropGalleryAdapter";
 
-    public class DataObjectHolder extends RecyclerView.ViewHolder {
+    public class DataObjectHolder extends RecyclerView.ViewHolder implements View.OnLongClickListener, View.OnDragListener {
 
         private ImageView galleryImage;
 
         public DataObjectHolder(View view) {
             super(view);
             this.galleryImage = (ImageView) view.findViewById(R.id.gallery_image);
+
+            final int position = getAdapterPosition();
+            if (position % 6 == 5 || position % 6 == 4 || position > last_image_position) {
+                galleryImage.setImageBitmap(null);
+                galleryImage.setOnTouchListener(null);
+                galleryImage.setOnClickListener(null);
+                galleryImage.setOnLongClickListener(null);
+
+            } else {
+                galleryImage.buildDrawingCache(true);
+
+                galleryImage.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Log.v(LOGTAG, "onClick position = " + getAdapterPosition());
+
+                    }
+                });
+
+                galleryImage.setOnLongClickListener(this);
+                galleryImage.setOnDragListener(this);
+
+
+            }
+
         }
+
+
+        @Override
+        public boolean onLongClick(View view) {
+            int __position = getAdapterPosition();
+            Log.v(LOGTAG, "onLongClick position = " + getAdapterPosition());
+            if (__position % 6 == 5 || __position % 6 == 4 || __position > last_image_position) {
+            } else {
+                ImageView questionMarkImage = (ImageView) activity.findViewById(R.id.question_mark);
+                Animation anim = questionMarkImage.getAnimation();
+                Log.v(LOGTAG, anim + "");
+                if (anim == null) {
+                    anim = new MyAnimation(questionMarkImage, 100);
+                    anim.setDuration(5000);
+                    anim.setRepeatCount(Animation.INFINITE);
+                    anim.setInterpolator(new LinearInterpolator());
+                    anim.setStartTime(0);
+                    questionMarkImage.startAnimation(anim);
+                    questionMarkImage.setVisibility(View.VISIBLE);
+                }
+
+                CoordinatorLayout dropAreaContainer = (CoordinatorLayout) activity.findViewById(R.id.drop_area_container);
+                dropAreaContainer.setVisibility(View.INVISIBLE);
+
+                ClipData data = ClipData.newPlainText("Dragdata", ImageNamesList.get(__position) + "__" + __position);
+                View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(view);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    view.startDragAndDrop(data, shadowBuilder, view, 0);
+                } else {
+                    view.startDrag(data, shadowBuilder, view, 0);
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public boolean onDrag(View view, DragEvent dragEvent) {
+            int __position = getAdapterPosition();
+
+
+            final View.OnLongClickListener onLongClickListener = this;
+
+
+            switch (dragEvent.getAction()) {
+                case DragEvent.ACTION_DRAG_STARTED:
+//                        Log.v(LOGTAG, "ACTION_DRAG_STARTED");
+
+                    break;
+                case DragEvent.ACTION_DRAG_ENTERED:
+//                                historyDrawer = v.getBackground();
+//                                v.setBackground(enterShape);
+                    //Log.v(LOGTAG, "ACTION_DRAG_ENTERED");
+                    break;
+                case DragEvent.ACTION_DRAG_LOCATION:
+                    //Log.v(LOGTAG,v.getX()+" "+v.getY());
+                case DragEvent.ACTION_DRAG_EXITED:
+                    //Log.v(LOGTAG, "ACTION_DRAG_EXITED");
+//                                v.setBackground(historyDrawer);
+                    break;
+                case DragEvent.ACTION_DROP:
+
+                    // Gets the item containing the dragged data
+                    ClipData.Item item = dragEvent.getClipData().getItemAt(0);
+
+                    // Gets the text data from the item.
+                    String data = item.getText().toString();
+                    String selected_image_address = data.split("__")[0];
+                    int dragPosition = Integer.parseInt(data.split("__")[1]);
+                    //CharSequence dragData = item.getText().toString();
+
+                    // Displays a message containing the dragged data.
+                    Toast.makeText(context, "Dragged data from " + dragPosition + " to " + __position, Toast.LENGTH_LONG).show();
+                    Log.v(LOGTAG, "ACTION_DROP " + dragPosition + " to " + __position + " " + selected_image_address);
+                    if (__position % 6 == 5 || __position % 6 == 4) {
+
+
+                        String imageName = selected_image_address.substring(
+                                selected_image_address.lastIndexOf(File.separator) + 1,
+                                selected_image_address.lastIndexOf("."));
+                        Log.v(LOGTAG, imageName);
+                        int resIdInterestPoint = context.getResources().getIdentifier(imageName, "string", context.getPackageName());
+
+                        CardView interestPointCard = (CardView) activity.findViewById(R.id.card_interest_point);
+                        final ImageView resultImageView = (ImageView) interestPointCard.findViewById(R.id.query_drop_area);
+                        TextView resultTextView = (TextView) interestPointCard.findViewById(R.id.cardview_text);
+                        resultTextView.setText(context.getString(resIdInterestPoint));
+
+//                            ImageView resultImageView = (ImageView) activity.findViewById(R.id.query_drop_area);
+                        File file = new File(selected_image_address);
+
+                        Glide.with(context)
+                                .load(file)
+                                .asBitmap()
+                                .centerCrop()
+                                .diskCacheStrategy(DiskCacheStrategy.RESULT)
+                                .into(resultImageView);
+                        resultImageView.invalidate();
+
+
+                        final ImageView questionMarkImage = (ImageView) activity.findViewById(R.id.question_mark);
+                        questionMarkImage.clearAnimation();
+                        ObjectAnimator flip = ObjectAnimator.ofFloat(questionMarkImage, "rotationY", 0f, 360f);
+                        flip.setDuration(1500);
+                        flip.setRepeatCount(2);
+//                        flip.start();
+                        flip.addListener(new Animator.AnimatorListener() {
+                            @Override
+                            public void onAnimationStart(Animator animator) {
+                                Log.v(LOGTAG, "Flip started");
+                            }
+
+                            @Override
+                            public void onAnimationEnd(Animator animator) {
+                                Log.v(LOGTAG, "Flip Ended");
+                                questionMarkImage.setVisibility(View.INVISIBLE);
+                                questionMarkImage.invalidate();
+
+                                resultImageView.setVisibility(View.VISIBLE);
+
+                                CoordinatorLayout dropAreaContainer = (CoordinatorLayout) activity.findViewById(R.id.drop_area_container);
+                                dropAreaContainer.setVisibility(View.VISIBLE);
+                            }
+
+                            @Override
+                            public void onAnimationCancel(Animator animator) {
+
+                            }
+
+                            @Override
+                            public void onAnimationRepeat(Animator animator) {
+
+                            }
+                        });
+
+                        questionMarkImage.setVisibility(View.INVISIBLE);
+                        questionMarkImage.invalidate();
+
+                        resultImageView.setVisibility(View.VISIBLE);
+
+                        CoordinatorLayout dropAreaContainer = (CoordinatorLayout) activity.findViewById(R.id.drop_area_container);
+                        dropAreaContainer.setVisibility(View.VISIBLE);
+                    }
+
+
+                    break;
+                case DragEvent.ACTION_DRAG_ENDED:
+                    //Log.v(LOGTAG, "ACTION_DRAG_ENDED");
+                    break;
+            }
+            return true;
+
+        }
+
     }
 
     public DragNDropGalleryAdapter(Context _context, Activity _activity, ArrayList<String> filePaths, int last_image_position, int imageWidth) {
@@ -122,139 +302,122 @@ public class DragNDropGalleryAdapter extends RecyclerView.Adapter<DragNDropGalle
                     .animate(animationObject)
                     .diskCacheStrategy(DiskCacheStrategy.RESULT)
                     .into(viewHolder.galleryImage);
-
-            viewHolder.galleryImage.buildDrawingCache(true);
-
-            viewHolder.galleryImage.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Log.v(LOGTAG, "onClick");
-
-                }
-            });
-
-
-            viewHolder.galleryImage.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    Log.v(LOGTAG, "onLongClick");
-
-                    ImageView questionMarkImage = (ImageView) activity.findViewById(R.id.question_mark);
-                    Animation anim = questionMarkImage.getAnimation();
-                    Log.v(LOGTAG, anim + "");
-                    if (anim == null) {
-                        anim = new MyAnimation(questionMarkImage, 100);
-                        anim.setDuration(5000);
-                        anim.setRepeatCount(Animation.INFINITE);
-                        anim.setInterpolator(new LinearInterpolator());
-                        anim.setStartTime(0);
-                        questionMarkImage.startAnimation(anim);
-                        questionMarkImage.setVisibility(View.VISIBLE);
-                    }
-
-                    CoordinatorLayout dropAreaContainer = (CoordinatorLayout) activity.findViewById(R.id.drop_area_container);
-                    dropAreaContainer.setVisibility(View.INVISIBLE);
-
-                    ClipData data = ClipData.newPlainText("Dragdata", ImageNamesList.get(_position) + "__" + _position);
-                    View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        v.startDragAndDrop(data, shadowBuilder, v, 0);
-                    } else {
-                        v.startDrag(data, shadowBuilder, v, 0);
-                    }
-
-                    return true;
-                }
-            });
-
         }
 
-        viewHolder.galleryImage.setOnDragListener(new View.OnDragListener() {
-            Drawable enterShape = activity.getResources().getDrawable(R.drawable.monument);
-            Drawable historyDrawer;
 
-            @Override
-            public boolean onDrag(View v, DragEvent event) {
-                switch (event.getAction()) {
-                    case DragEvent.ACTION_DRAG_STARTED:
-                        Log.v(LOGTAG, "ACTION_DRAG_STARTED");
-
-                        break;
-                    case DragEvent.ACTION_DRAG_ENTERED:
-                        historyDrawer = v.getBackground();
-                        v.setBackground(enterShape);
-                        //Log.v(LOGTAG, "ACTION_DRAG_ENTERED");
-                        break;
-                    case DragEvent.ACTION_DRAG_LOCATION:
-                        //Log.v(LOGTAG,v.getX()+" "+v.getY());
-                    case DragEvent.ACTION_DRAG_EXITED:
-                        //Log.v(LOGTAG, "ACTION_DRAG_EXITED");
-                        v.setBackground(historyDrawer);
-                        break;
-                    case DragEvent.ACTION_DROP:
-                        // Gets the item containing the dragged data
-
-                        ClipData.Item item = event.getClipData().getItemAt(0);
-
-                        // Gets the text data from the item.
-                        String data = item.getText().toString();
-                        String selected_image_address = data.split("__")[0];
-                        int dragPosition = Integer.parseInt(data.split("__")[1]);
-                        //CharSequence dragData = item.getText().toString();
-
-                        // Displays a message containing the dragged data.
-                        Toast.makeText(context, "Dragged data from " + dragPosition + " to " + _position, Toast.LENGTH_LONG).show();
-                        Log.v(LOGTAG, "ACTION_DROP " + dragPosition + " to " + _position + " " + selected_image_address);
-                        if (position % 6 == 5 || position % 6 == 4) {
-
-                            ImageView questionMarkImage = (ImageView) activity.findViewById(R.id.question_mark);
-                            questionMarkImage.clearAnimation();
-                            questionMarkImage.setVisibility(View.INVISIBLE);
-                            questionMarkImage.invalidate();
-
-
-                            String imageName = selected_image_address.substring(
-                                    selected_image_address.lastIndexOf(File.separator) + 1,
-                                    selected_image_address.lastIndexOf("."));
-                            Log.v(LOGTAG, imageName);
-                            int resIdInterestPoint = context.getResources().getIdentifier(imageName, "string", context.getPackageName());
-
-                            CardView interestPointCard = (CardView) activity.findViewById(R.id.card_interest_point);
-                            ImageView resultImageView = (ImageView) interestPointCard.findViewById(R.id.query_drop_area);
-                            TextView resultTextView = (TextView) interestPointCard.findViewById(R.id.cardview_text);
-                            resultTextView.setText(context.getString(resIdInterestPoint));
-
-//                            ImageView resultImageView = (ImageView) activity.findViewById(R.id.query_drop_area);
-                            File file = new File(selected_image_address);
-
-                            Glide.with(context)
-                                    .load(file)
-                                    .asBitmap()
-                                    .centerCrop()
-                                    .diskCacheStrategy(DiskCacheStrategy.RESULT)
-                                    .into(resultImageView);
-                            resultImageView.invalidate();
-
-                            resultImageView.setVisibility(View.VISIBLE);
-
-                            CoordinatorLayout dropAreaContainer = (CoordinatorLayout) activity.findViewById(R.id.drop_area_container);
-                            dropAreaContainer.setVisibility(View.VISIBLE);
-
-
-                        } else {
-
-                        }
-
-
-                        break;
-                    case DragEvent.ACTION_DRAG_ENDED:
-                        //Log.v(LOGTAG, "ACTION_DRAG_ENDED");
-                        break;
-                }
-                return true;
-            }
-
-        });
+//
+//        viewHolder.galleryImage.setOnDragListener(new View.OnDragListener() {
+//            Drawable enterShape = activity.getResources().getDrawable(R.drawable.monument);
+//            Drawable historyDrawer;
+//
+//            @Override
+//            public boolean onDrag(View v, DragEvent event) {
+//                switch (event.getAction()) {
+//                    case DragEvent.ACTION_DRAG_STARTED:
+////                        Log.v(LOGTAG, "ACTION_DRAG_STARTED");
+//
+//                        break;
+//                    case DragEvent.ACTION_DRAG_ENTERED:
+//                        historyDrawer = v.getBackground();
+//                        v.setBackground(enterShape);
+//                        //Log.v(LOGTAG, "ACTION_DRAG_ENTERED");
+//                        break;
+//                    case DragEvent.ACTION_DRAG_LOCATION:
+//                        //Log.v(LOGTAG,v.getX()+" "+v.getY());
+//                    case DragEvent.ACTION_DRAG_EXITED:
+//                        //Log.v(LOGTAG, "ACTION_DRAG_EXITED");
+//                        v.setBackground(historyDrawer);
+//                        break;
+//                    case DragEvent.ACTION_DROP:
+//                        // Gets the item containing the dragged data
+//
+//                        ClipData.Item item = event.getClipData().getItemAt(0);
+//
+//                        // Gets the text data from the item.
+//                        String data = item.getText().toString();
+//                        String selected_image_address = data.split("__")[0];
+//                        int dragPosition = Integer.parseInt(data.split("__")[1]);
+//                        //CharSequence dragData = item.getText().toString();
+//
+//                        // Displays a message containing the dragged data.
+//                        Toast.makeText(context, "Dragged data from " + dragPosition + " to " + _position, Toast.LENGTH_LONG).show();
+//                        Log.v(LOGTAG, "ACTION_DROP " + dragPosition + " to " + _position + " " + selected_image_address);
+//                        if (position % 6 == 5 || position % 6 == 4) {
+//
+//                            String imageName = selected_image_address.substring(
+//                                    selected_image_address.lastIndexOf(File.separator) + 1,
+//                                    selected_image_address.lastIndexOf("."));
+//                            Log.v(LOGTAG, imageName);
+//                            int resIdInterestPoint = context.getResources().getIdentifier(imageName, "string", context.getPackageName());
+//
+//                            CardView interestPointCard = (CardView) activity.findViewById(R.id.card_interest_point);
+//                            final ImageView resultImageView = (ImageView) interestPointCard.findViewById(R.id.query_drop_area);
+//                            TextView resultTextView = (TextView) interestPointCard.findViewById(R.id.cardview_text);
+//                            resultTextView.setText(context.getString(resIdInterestPoint));
+//
+////                            ImageView resultImageView = (ImageView) activity.findViewById(R.id.query_drop_area);
+//                            File file = new File(selected_image_address);
+//
+//                            Glide.with(context)
+//                                    .load(file)
+//                                    .asBitmap()
+//                                    .centerCrop()
+//                                    .diskCacheStrategy(DiskCacheStrategy.RESULT)
+//                                    .into(resultImageView);
+//                            resultImageView.invalidate();
+//
+//
+//                            final ImageView questionMarkImage = (ImageView) activity.findViewById(R.id.question_mark);
+//                            questionMarkImage.clearAnimation();
+//                            ObjectAnimator flip = ObjectAnimator.ofFloat(questionMarkImage, "rotationY", 0f, 360f);
+//                            flip.setDuration(1500);
+//                            flip.setRepeatCount(2);
+//                            flip.start();
+//                            flip.addListener(new Animator.AnimatorListener() {
+//                                @Override
+//                                public void onAnimationStart(Animator animator) {
+//
+//                                }
+//
+//                                @Override
+//                                public void onAnimationEnd(Animator animator) {
+//
+//                                    questionMarkImage.setVisibility(View.INVISIBLE);
+//                                    questionMarkImage.invalidate();
+//
+//                                    resultImageView.setVisibility(View.VISIBLE);
+//
+//                                    CoordinatorLayout dropAreaContainer = (CoordinatorLayout) activity.findViewById(R.id.drop_area_container);
+//                                    dropAreaContainer.setVisibility(View.VISIBLE);
+//                                }
+//
+//                                @Override
+//                                public void onAnimationCancel(Animator animator) {
+//
+//                                }
+//
+//                                @Override
+//                                public void onAnimationRepeat(Animator animator) {
+//
+//                                }
+//                            });
+//
+//
+//
+//                        } else {
+//
+//                        }
+//
+//
+//                        break;
+//                    case DragEvent.ACTION_DRAG_ENDED:
+//                        //Log.v(LOGTAG, "ACTION_DRAG_ENDED");
+//                        break;
+//                }
+//                return true;
+//            }
+//
+//        });
 
 
     }
@@ -272,6 +435,5 @@ public class DragNDropGalleryAdapter extends RecyclerView.Adapter<DragNDropGalle
     public int getItemCount() {
         return this.ImageNamesList.size();
     }
-
 
 }
